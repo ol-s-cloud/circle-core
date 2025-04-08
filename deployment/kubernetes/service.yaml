@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: circle-core
+  labels:
+    app: circle-core
+spec:
+  selector:
+    app: circle-core
+  ports:
+  - port: 80
+    targetPort: 8000
+  type: ClusterIP

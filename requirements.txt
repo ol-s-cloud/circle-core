@@ -1,0 +1,14 @@
+# Circle Core Framework requirements
+# This file includes core dependencies
+
+# Include all base dependencies
+-r requirements/base.txt
+
+# For development, include:
+# -r requirements/dev.txt
+
+# For testing, include:
+# -r requirements/test.txt
+
+# For documentation, include:
+# -r requirements/docs.txt

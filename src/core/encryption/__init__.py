@@ -1,6 +1,15 @@
-# Circle Core Framework - Encryption
+"""
+Encryption services for Circle Core Framework.
+Implements secure encryption with key rotation and envelope encryption support.
+"""
 
-"""
-Encryption services for Circle Core.
-Implements AES-256 encryption with proper key rotation.
-"""
+from .service import EncryptionService, EncryptionAlgorithm, EncryptedData
+from .key_manager import KeyManager, KeyRotationPolicy
+
+__all__ = [
+    'EncryptionService',
+    'EncryptionAlgorithm', 
+    'EncryptedData',
+    'KeyManager',
+    'KeyRotationPolicy'
+]

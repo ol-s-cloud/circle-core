@@ -14,6 +14,8 @@ from typing import Dict, List, Optional, Tuple, Union
 from argon2 import PasswordHasher
 from argon2.exceptions import VerifyMismatchError
 
+from .mfa import MFAService, MFAType
+
 
 class AuthResult(Enum):
     """Enum representing authentication result states."""
@@ -51,6 +53,7 @@ class AuthenticationService:
         lockout_duration_minutes: int = 30,
         password_expiry_days: int = 90,
         min_password_length: int = 12,
+        mfa_service: Optional[MFAService] = None,
     ):
         """Initialize the authentication service.
 
@@ -60,6 +63,7 @@ class AuthenticationService:
             lockout_duration_minutes: Duration of account lockout in minutes
             password_expiry_days: Number of days before passwords expire
             min_password_length: Minimum required password length
+            mfa_service: Optional MFAService instance
         """
         self.user_db_path = user_db_path or os.path.expanduser("~/.circle-core/auth/users.json")
         os.makedirs(os.path.dirname(self.user_db_path), exist_ok=True)
@@ -68,6 +72,9 @@ class AuthenticationService:
         self.lockout_duration_minutes = lockout_duration_minutes
         self.password_expiry_days = password_expiry_days
         self.min_password_length = min_password_length
+
+        # Initialize or use provided MFA service
+        self.mfa_service = mfa_service or MFAService()
 
         # Initialize password hasher with secure parameters
         self.password_hasher = PasswordHasher(
@@ -193,7 +200,7 @@ class AuthenticationService:
             self._save_users()
 
             # Check if MFA is required
-            if user.get("mfa_enabled", False):
+            if user.get("mfa_enabled", False) and "mfa_config" in user:
                 return AuthResult.REQUIRES_MFA, user
 
             return AuthResult.SUCCESS, user
@@ -230,12 +237,20 @@ class AuthenticationService:
         user = self.users[username]
 
         # Check if MFA is enabled
-        if not user.get("mfa_enabled", False):
+        if not user.get("mfa_enabled", False) or "mfa_config" not in user:
             return AuthResult.SUCCESS, user
 
-        # In a real implementation, this would validate TOTP or other MFA mechanisms
-        # For this example, we'll use a simple placeholder
-        if mfa_code == user.get("mfa_secret", ""):
+        # Verify MFA code using MFA service
+        success, updated_config = self.mfa_service.verify_mfa(
+            user["mfa_config"], mfa_code
+        )
+
+        if success:
+            # Update MFA config if needed (e.g., if backup code was used)
+            if updated_config:
+                user["mfa_config"] = updated_config
+                self._save_users()
+            
             return AuthResult.SUCCESS, user
         else:
             return AuthResult.MFA_FAILED, None
@@ -353,7 +368,7 @@ class AuthenticationService:
             return False
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return False
 
         # Check if user exists
@@ -399,7 +414,7 @@ class AuthenticationService:
             return False
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return False
 
         # Check if user exists
@@ -431,7 +446,7 @@ class AuthenticationService:
             return False
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return False
 
         # Check if user exists
@@ -443,40 +458,44 @@ class AuthenticationService:
         self._save_users()
         return True
 
-    def enable_mfa(
-        self, username: str, password: str, mfa_secret: str
-    ) -> bool:
-        """Enable multi-factor authentication for a user.
+    def setup_mfa(
+        self, username: str, password: str, mfa_type: MFAType = MFAType.TOTP
+    ) -> Optional[Dict]:
+        """Set up multi-factor authentication for a user.
 
         Args:
             username: Username
             password: Password
-            mfa_secret: MFA secret key
+            mfa_type: Type of MFA to set up
 
         Returns:
-            True if MFA was enabled, False if authentication failed
+            MFA setup information or None if authentication failed
         """
         # Authenticate user first
         result, user = self.authenticate(username, password)
 
         if result != AuthResult.SUCCESS and result != AuthResult.REQUIRES_MFA:
-            return False
+            return None
 
-        # Enable MFA
+        # Set up MFA using MFA service
+        mfa_config = self.mfa_service.setup_mfa_for_user(username, mfa_type)
+
+        # Update user record
         self.users[username]["mfa_enabled"] = True
-        self.users[username]["mfa_secret"] = mfa_secret
+        self.users[username]["mfa_config"] = mfa_config
 
         self._save_users()
-        return True
+        return mfa_config
 
     def disable_mfa(
-        self, username: str, password: str
+        self, username: str, password: str, mfa_code: str = None
     ) -> bool:
         """Disable multi-factor authentication for a user.
 
         Args:
             username: Username
             password: Password
+            mfa_code: MFA verification code (required if MFA is active)
 
         Returns:
             True if MFA was disabled, False if authentication failed
@@ -484,17 +503,21 @@ class AuthenticationService:
         # Authenticate user first
         result, user = self.authenticate(username, password)
 
-        if result != AuthResult.SUCCESS and result != AuthResult.REQUIRES_MFA:
-            return False
-
-        # If MFA is required for this authentication, verify it was already provided
+        # If MFA is required, verify it
         if result == AuthResult.REQUIRES_MFA:
+            if mfa_code is None:
+                return False
+                
+            mfa_result, user = self.verify_mfa(username, mfa_code)
+            if mfa_result != AuthResult.SUCCESS:
+                return False
+        elif result != AuthResult.SUCCESS:
             return False
 
         # Disable MFA
         self.users[username]["mfa_enabled"] = False
-        if "mfa_secret" in self.users[username]:
-            del self.users[username]["mfa_secret"]
+        if "mfa_config" in self.users[username]:
+            del self.users[username]["mfa_config"]
 
         self._save_users()
         return True
@@ -519,7 +542,7 @@ class AuthenticationService:
             return False
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return False
 
         # Check if user exists
@@ -554,7 +577,7 @@ class AuthenticationService:
             return None
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return None
 
         # Check if user exists
@@ -585,7 +608,7 @@ class AuthenticationService:
             return None
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return None
 
         # Return list of users (excluding password hashes)
@@ -618,7 +641,7 @@ class AuthenticationService:
             return None
 
         # Check if admin has sufficient privileges
-        if admin.get("role") not in ("admin", "system"):
+        if admin.get("role") not in (UserRole.ADMIN.value, UserRole.SYSTEM.value):
             return None
 
         # Check if user exists

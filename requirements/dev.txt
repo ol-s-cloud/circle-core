@@ -1,0 +1,12 @@
+# Development dependencies for Circle Core Framework
+
+# Include base dependencies
+-r base.txt
+
+# Development tools
+black>=22.0.0
+isort>=5.10.0
+mypy>=0.950
+flake8>=4.0.0
+bandit>=1.7.0
+pre-commit>=2.17.0

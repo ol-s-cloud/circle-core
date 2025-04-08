@@ -1,0 +1,11 @@
+# Base dependencies for Circle Core Framework
+
+# Core dependencies
+requests>=2.25.0
+pyyaml>=5.4.0
+cryptography>=37.0.0
+argon2-cffi>=21.3.0
+pydantic>=1.8.0
+sqlalchemy>=1.4.0
+fastapi>=0.68.0
+uvicorn>=0.15.0

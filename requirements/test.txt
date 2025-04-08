@@ -1,0 +1,12 @@
+# Test dependencies for Circle Core Framework
+
+# Include base dependencies
+-r base.txt
+
+# Testing tools
+pytest>=7.0.0
+pytest-cov>=2.12.0
+pytest-mock>=3.7.0
+pytest-asyncio>=0.18.0
+pytest-xdist>=2.5.0
+coverage>=6.2.0

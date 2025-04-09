@@ -4,6 +4,7 @@ Provides various storage options for secure audit log storage and retrieval.
 """
 
 import abc
+import base64
 import json
 import os
 import tempfile
@@ -532,3 +533,15 @@ class EncryptedLogStorage(LogStorageBackend):
         """
         # Chain entries are not encrypted
         return self.base_storage.get_chain_entries()
+        
+    def store_chain_entries(self, entries: List[Dict]) -> bool:
+        """Store chain entries for verification.
+
+        Args:
+            entries: List of chain entries to store
+
+        Returns:
+            True if successful, False otherwise
+        """
+        # Chain entries are not encrypted
+        return self.base_storage.store_chain_entries(entries)

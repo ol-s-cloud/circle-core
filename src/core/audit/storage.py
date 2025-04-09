@@ -71,6 +71,18 @@ class LogStorageBackend(abc.ABC):
         """
         pass
 
+    @abc.abstractmethod
+    def store_chain_entries(self, entries: List[Dict]) -> bool:
+        """Store chain entries for verification.
+
+        Args:
+            entries: List of chain entries to store
+
+        Returns:
+            True if successful, False otherwise
+        """
+        pass
+
 
 class FileLogStorage(LogStorageBackend):
     """File-based storage backend for audit logs.

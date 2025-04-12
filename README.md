@@ -58,13 +58,31 @@ pip install circle-core[test]
 pip install circle-core[docs]
 ```
 
+## Key Features
+
+### Security Components
+
+- **Authentication**: Secure user authentication with MFA, Argon2 hashing, and role-based access
+- **Encryption**: Data protection with key rotation, multiple algorithms, and envelope encryption
+- **Audit Logging**: Tamper-evident logging with cryptographic hash chains and integrity verification
+- **Security Scanning**: Automatic scanning for vulnerabilities in dependencies
+
+### Infrastructure Components
+
+- **Storage**: Unified storage interface with transparent encryption and multiple backends
+- **Package Registry**: Package management with versioning, validation, and dependency resolution
+- **Licensing**: Coming soon - License validation and management system
+- **Configuration**: Coming soon - Configuration management and validation
+
 ## Getting Started
 
+### Security Example
+
 ```python
-from circle_core import security
+from circle_core.security import dependency_scanner
 
 # Initialize the security scanner
-scanner = security.dependency_scanner.Scanner()
+scanner = dependency_scanner.Scanner()
 
 # Scan your project dependencies
 results = scanner.scan_requirements_file("requirements.txt")
@@ -75,6 +93,52 @@ for result in results:
         print(f"Vulnerabilities found in {result['package']}!")
 ```
 
+### Storage Example
+
+```python
+from circle_core.infrastructure.storage import StorageManager
+
+# Create a storage manager
+storage_manager = StorageManager()
+
+# Store an object
+metadata = storage_manager.put_object(
+    "my_file.txt",
+    data="Hello, world!",
+    content_type="text/plain"
+)
+
+# Retrieve the object
+obj = storage_manager.get_object("my_file.txt")
+print(obj.data)  # Outputs: Hello, world!
+```
+
+### Registry Example
+
+```python
+from circle_core.infrastructure.registry import CoreRegistryManager
+
+# Create a registry manager
+registry_manager = CoreRegistryManager()
+registry_manager.initialize()
+
+# Publish a package
+registry_manager.publish_package(
+    "example-package",
+    "1.0.0",
+    package_data,
+    package_metadata
+)
+
+# Search for packages
+results = registry_manager.search_packages("example")
+
+# Download a package
+package_data = registry_manager.download_package("example-package", "1.0.0")
+```
+
+See the [examples directory](docs/examples/) for more detailed examples.
+
 ## Documentation
 
 Comprehensive documentation is available in the `docs/` directory.
@@ -83,8 +147,8 @@ Comprehensive documentation is available in the `docs/` directory.
 
 ```bash
 # Clone the repository
-git clone https://github.com/ol-s-cloud/circle-core-framework.git
-cd circle-core-framework
+git clone https://github.com/ol-s-cloud/circle-core.git
+cd circle-core
 
 # Install development dependencies
 pip install -e ".[dev,test]"
@@ -92,6 +156,10 @@ pip install -e ".[dev,test]"
 # Run tests
 pytest
 ```
+
+## Project Status
+
+See [SPRINT_STATUS.md](SPRINT_STATUS.md) for current development status.
 
 ## License
 

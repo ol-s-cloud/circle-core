@@ -1,4 +1,4 @@
-# Circle Core Framework
+# Circle Core
 
 Core framework and infrastructure for the Circle Core ecosystem. Provides a foundation of security, infrastructure, and development tools for building secure, scalable applications.
 
@@ -46,16 +46,16 @@ Circle Core is a comprehensive platform for building, deploying, and managing se
 
 ```bash
 # Install the core framework
-pip install circle-core-framework
+pip install circle-core
 
 # Install with development dependencies
-pip install circle-core-framework[dev]
+pip install circle-core[dev]
 
 # Install with test dependencies
-pip install circle-core-framework[test]
+pip install circle-core[test]
 
 # Install with documentation dependencies
-pip install circle-core-framework[docs]
+pip install circle-core[docs]
 ```
 
 ## Getting Started

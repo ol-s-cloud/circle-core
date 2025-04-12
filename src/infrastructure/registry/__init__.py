@@ -1,6 +1,19 @@
-# Circle Core Framework - Registry
+# Circle Core - Registry Module
+# Version: 0.1.0
 
 """
-Package registry for Circle Core.
-Implements secure package storage, retrieval, and management.
+Registry module for Circle Core.
+
+This module provides functionality for package management, distribution, and verification.
+It includes components for metadata management, storage, versioning, and validation.
 """
+
+__all__ = [
+    'interface',
+    'metadata',
+    'storage',
+    'versioning',
+    'validation',
+    'search',
+    'manager',
+]

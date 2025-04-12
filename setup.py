@@ -9,7 +9,7 @@ with open('README.md', 'r') as f:
     long_description = f.read()
 
 setup(
-    name='circle-core-framework',
+    name='circle-core',  # Changed from 'circle-core-framework'
     version='0.1.0',
     author='Circle Data & IT Solutions Ltd',
     author_email='hello@circle-labs.co.uk',

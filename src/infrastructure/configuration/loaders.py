@@ -13,30 +13,440 @@ import re
 from .interface import ConfigLoader, ConfigFormat
 
 
-class DefaultConfigLoader(ConfigLoader):
-    """Default implementation of configuration loader.
+class ConfigLoadError(Exception):
+    """Error when loading configuration."""
+    pass
+
+
+class ConfigSaveError(Exception):
+    """Error when saving configuration."""
+    pass
+
+
+class JsonLoader:
+    """JSON configuration loader."""
     
-    This loader supports various file formats (JSON, YAML, TOML, INI, ENV, Python).
-    """
+    def load(self, source: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+        """Load JSON configuration.
+        
+        Args:
+            source: JSON file path or dictionary
+            
+        Returns:
+            Configuration dictionary
+        
+        Raises:
+            ConfigLoadError: If failed to load
+        """
+        if isinstance(source, dict):
+            return source
+        
+        try:
+            with open(str(source), 'r') as f:
+                return json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError, OSError) as e:
+            raise ConfigLoadError(f"Failed to load JSON configuration: {e}")
+    
+    def save(self, config: Dict[str, Any], destination: Union[str, Path]) -> None:
+        """Save configuration to JSON file.
+        
+        Args:
+            config: Configuration dictionary
+            destination: JSON file path
+            
+        Raises:
+            ConfigSaveError: If failed to save
+        """
+        try:
+            with open(str(destination), 'w') as f:
+                json.dump(config, f, indent=2)
+        except (OSError, TypeError) as e:
+            raise ConfigSaveError(f"Failed to save JSON configuration: {e}")
+
+
+class YamlLoader:
+    """YAML configuration loader."""
+    
+    def load(self, source: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+        """Load YAML configuration.
+        
+        Args:
+            source: YAML file path or dictionary
+            
+        Returns:
+            Configuration dictionary
+        
+        Raises:
+            ConfigLoadError: If failed to load
+        """
+        if isinstance(source, dict):
+            return source
+        
+        try:
+            import yaml
+        except ImportError:
+            raise ConfigLoadError("PyYAML is not installed. Install it with 'pip install pyyaml'")
+        
+        try:
+            with open(str(source), 'r') as f:
+                return yaml.safe_load(f)
+        except (FileNotFoundError, yaml.YAMLError, OSError) as e:
+            raise ConfigLoadError(f"Failed to load YAML configuration: {e}")
+    
+    def save(self, config: Dict[str, Any], destination: Union[str, Path]) -> None:
+        """Save configuration to YAML file.
+        
+        Args:
+            config: Configuration dictionary
+            destination: YAML file path
+            
+        Raises:
+            ConfigSaveError: If failed to save
+        """
+        try:
+            import yaml
+        except ImportError:
+            raise ConfigSaveError("PyYAML is not installed. Install it with 'pip install pyyaml'")
+        
+        try:
+            with open(str(destination), 'w') as f:
+                yaml.dump(config, f, default_flow_style=False)
+        except (OSError, yaml.YAMLError) as e:
+            raise ConfigSaveError(f"Failed to save YAML configuration: {e}")
+
+
+class TomlLoader:
+    """TOML configuration loader."""
+    
+    def load(self, source: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+        """Load TOML configuration.
+        
+        Args:
+            source: TOML file path or dictionary
+            
+        Returns:
+            Configuration dictionary
+        
+        Raises:
+            ConfigLoadError: If failed to load
+        """
+        if isinstance(source, dict):
+            return source
+        
+        try:
+            import toml
+        except ImportError:
+            raise ConfigLoadError("toml is not installed. Install it with 'pip install toml'")
+        
+        try:
+            with open(str(source), 'r') as f:
+                return toml.load(f)
+        except (FileNotFoundError, toml.TomlDecodeError, OSError) as e:
+            raise ConfigLoadError(f"Failed to load TOML configuration: {e}")
+    
+    def save(self, config: Dict[str, Any], destination: Union[str, Path]) -> None:
+        """Save configuration to TOML file.
+        
+        Args:
+            config: Configuration dictionary
+            destination: TOML file path
+            
+        Raises:
+            ConfigSaveError: If failed to save
+        """
+        try:
+            import toml
+        except ImportError:
+            raise ConfigSaveError("toml is not installed. Install it with 'pip install toml'")
+        
+        try:
+            with open(str(destination), 'w') as f:
+                toml.dump(config, f)
+        except (OSError, TypeError) as e:
+            raise ConfigSaveError(f"Failed to save TOML configuration: {e}")
+
+
+class IniLoader:
+    """INI configuration loader."""
+    
+    def load(self, source: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+        """Load INI configuration.
+        
+        Args:
+            source: INI file path or dictionary
+            
+        Returns:
+            Configuration dictionary
+        
+        Raises:
+            ConfigLoadError: If failed to load
+        """
+        if isinstance(source, dict):
+            return source
+        
+        try:
+            import configparser
+        except ImportError:
+            raise ConfigLoadError("configparser is not available")
+        
+        try:
+            config = configparser.ConfigParser()
+            config.read(str(source))
+            
+            # Convert to dictionary
+            result = {}
+            for section in config.sections():
+                result[section] = {}
+                for key, value in config[section].items():
+                    # Try to convert to appropriate type
+                    try:
+                        # Try as int
+                        result[section][key] = int(value)
+                    except ValueError:
+                        try:
+                            # Try as float
+                            result[section][key] = float(value)
+                        except ValueError:
+                            # Try as boolean
+                            if value.lower() in ("true", "yes", "1"):
+                                result[section][key] = True
+                            elif value.lower() in ("false", "no", "0"):
+                                result[section][key] = False
+                            else:
+                                # Keep as string
+                                result[section][key] = value
+            
+            return result
+        except (FileNotFoundError, configparser.Error, OSError) as e:
+            raise ConfigLoadError(f"Failed to load INI configuration: {e}")
+    
+    def save(self, config: Dict[str, Any], destination: Union[str, Path]) -> None:
+        """Save configuration to INI file.
+        
+        Args:
+            config: Configuration dictionary
+            destination: INI file path
+            
+        Raises:
+            ConfigSaveError: If failed to save
+        """
+        try:
+            import configparser
+        except ImportError:
+            raise ConfigSaveError("configparser is not available")
+        
+        try:
+            ini_config = configparser.ConfigParser()
+            
+            # Convert dictionary to configparser format
+            for section, section_config in config.items():
+                ini_config[section] = {}
+                for key, value in section_config.items():
+                    ini_config[section][key] = str(value)
+            
+            with open(str(destination), 'w') as f:
+                ini_config.write(f)
+        except (OSError, TypeError, configparser.Error) as e:
+            raise ConfigSaveError(f"Failed to save INI configuration: {e}")
+
+
+class EnvLoader:
+    """Environment variables configuration loader."""
+    
+    def __init__(self, prefix: str = ""):
+        """Initialize environment variables loader.
+        
+        Args:
+            prefix: Optional prefix for environment variables
+        """
+        self.prefix = prefix
+    
+    def load(self, source: Union[str, Path, Dict[str, Any]] = None) -> Dict[str, Any]:
+        """Load configuration from environment variables.
+        
+        Args:
+            source: Optional file path (ignored)
+            
+        Returns:
+            Configuration dictionary
+        """
+        result = {}
+        
+        # Get all environment variables
+        for key, value in os.environ.items():
+            # Check if key has prefix
+            if self.prefix and not key.startswith(self.prefix):
+                continue
+            
+            # Remove prefix
+            if self.prefix:
+                clean_key = key[len(self.prefix):]
+            else:
+                clean_key = key
+            
+            # Convert value to appropriate type
+            try:
+                # Try as int
+                value = int(value)
+            except ValueError:
+                try:
+                    # Try as float
+                    value = float(value)
+                except ValueError:
+                    # Try as boolean
+                    if value.lower() in ("true", "yes", "1"):
+                        value = True
+                    elif value.lower() in ("false", "no", "0"):
+                        value = False
+                    # Otherwise, keep as string
+            
+            # Convert key to nested structure
+            # e.g. APP_DATABASE_HOST -> app.database.host
+            parts = re.split(r'[_.]', clean_key.lower())
+            current = result
+            
+            for i, part in enumerate(parts[:-1]):
+                if part not in current:
+                    current[part] = {}
+                elif not isinstance(current[part], dict):
+                    # If the key already exists but is not a dict, convert it
+                    current[part] = {"value": current[part]}
+                current = current[part]
+            
+            current[parts[-1]] = value
+        
+        return result
+    
+    def save(self, config: Dict[str, Any], destination: Union[str, Path]) -> None:
+        """Save configuration to environment file.
+        
+        Args:
+            config: Configuration dictionary
+            destination: Environment file path
+            
+        Raises:
+            ConfigSaveError: If failed to save
+        """
+        try:
+            with open(str(destination), 'w') as f:
+                # Flatten dictionary
+                env_vars = self._flatten_dict(config)
+                
+                # Write to file
+                for key, value in env_vars.items():
+                    if self.prefix:
+                        key = f"{self.prefix}{key}"
+                    f.write(f"{key}={value}\n")
+        except OSError as e:
+            raise ConfigSaveError(f"Failed to save environment configuration: {e}")
+    
+    def _flatten_dict(self, config: Dict[str, Any], prefix: str = "") -> Dict[str, str]:
+        """Flatten a nested dictionary to environment variables.
+        
+        Args:
+            config: Configuration dictionary
+            prefix: Key prefix
+            
+        Returns:
+            Dictionary of environment variables
+        """
+        result = {}
+        
+        for key, value in config.items():
+            env_key = f"{prefix}{'_' if prefix else ''}{key}".upper()
+            
+            if isinstance(value, dict):
+                # Recursively flatten nested dictionaries
+                nested = self._flatten_dict(value, env_key)
+                result.update(nested)
+            else:
+                # Convert value to string
+                result[env_key] = str(value)
+        
+        return result
+
+
+class PythonLoader:
+    """Python module configuration loader."""
+    
+    def load(self, source: Union[str, Path, Dict[str, Any]]) -> Dict[str, Any]:
+        """Load configuration from Python module.
+        
+        Args:
+            source: Python file path or dictionary
+            
+        Returns:
+            Configuration dictionary
+        
+        Raises:
+            ConfigLoadError: If failed to load
+        """
+        if isinstance(source, dict):
+            return source
+        
+        try:
+            # Load module
+            spec = importlib.util.spec_from_file_location("config_module", str(source))
+            if spec is None or spec.loader is None:
+                raise ConfigLoadError(f"Failed to load Python module: {source}")
+            
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            
+            # Extract configuration
+            config = {}
+            for key in dir(module):
+                # Skip private/special attributes
+                if key.startswith('_'):
+                    continue
+                
+                value = getattr(module, key)
+                
+                # Skip functions and classes
+                if callable(value) or isinstance(value, type):
+                    continue
+                
+                config[key] = value
+            
+            return config
+        except (FileNotFoundError, ImportError, OSError) as e:
+            raise ConfigLoadError(f"Failed to load Python configuration: {e}")
+    
+    def save(self, config: Dict[str, Any], destination: Union[str, Path]) -> None:
+        """Save configuration to Python file.
+        
+        Args:
+            config: Configuration dictionary
+            destination: Python file path
+            
+        Raises:
+            ConfigSaveError: If failed to save
+        """
+        try:
+            with open(str(destination), 'w') as f:
+                f.write("# Configuration generated by Circle Core\n\n")
+                
+                for key, value in config.items():
+                    if isinstance(value, str):
+                        f.write(f"{key} = '{value}'\n")
+                    else:
+                        f.write(f"{key} = {repr(value)}\n")
+        except OSError as e:
+            raise ConfigSaveError(f"Failed to save Python configuration: {e}")
+
+
+class StandardConfigLoader(ConfigLoader):
+    """Standard configuration loader supporting multiple formats."""
     
     def __init__(self):
-        """Initialize the default configuration loader."""
-        self._format_handlers = {
-            ConfigFormat.JSON: self._load_json,
-            ConfigFormat.YAML: self._load_yaml,
-            ConfigFormat.TOML: self._load_toml,
-            ConfigFormat.INI: self._load_ini,
-            ConfigFormat.ENV: self._load_env,
-            ConfigFormat.PYTHON: self._load_python
-        }
-        
-        self._save_handlers = {
-            ConfigFormat.JSON: self._save_json,
-            ConfigFormat.YAML: self._save_yaml,
-            ConfigFormat.TOML: self._save_toml,
-            ConfigFormat.INI: self._save_ini,
-            ConfigFormat.ENV: self._save_env,
-            ConfigFormat.PYTHON: self._save_python
+        """Initialize standard configuration loader."""
+        self.loaders = {
+            ConfigFormat.JSON: JsonLoader(),
+            ConfigFormat.YAML: YamlLoader(),
+            ConfigFormat.TOML: TomlLoader(),
+            ConfigFormat.INI: IniLoader(),
+            ConfigFormat.ENV: EnvLoader(),
+            ConfigFormat.PYTHON: PythonLoader()
         }
     
     def load(self, source: Union[str, Path, Dict[str, Any]], format: Optional[ConfigFormat] = None) -> Dict[str, Any]:
@@ -48,37 +458,24 @@ class DefaultConfigLoader(ConfigLoader):
             
         Returns:
             Configuration dictionary
-            
+        
         Raises:
-            ValueError: If format is not supported or cannot be detected
-            FileNotFoundError: If source file does not exist
-            Exception: If loading fails
+            ConfigLoadError: If failed to load
         """
-        # If source is already a dictionary, return it
         if isinstance(source, dict):
             return source
         
-        # Convert to Path object
-        if isinstance(source, str):
-            source_path = Path(source)
-        else:
-            source_path = source
-        
-        # Check if file exists
-        if not source_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {source_path}")
-        
-        # Detect format if not provided
+        # Auto-detect format if not specified
         if format is None:
-            format = self._detect_format(source_path)
+            format = self._detect_format(source)
         
-        # Get format handler
-        handler = self._format_handlers.get(format)
-        if handler is None:
-            raise ValueError(f"Unsupported configuration format: {format}")
+        # Get loader for format
+        loader = self.loaders.get(format)
+        if loader is None:
+            raise ConfigLoadError(f"Unsupported format: {format}")
         
         # Load configuration
-        return handler(source_path)
+        return loader.load(source)
     
     def save(self, config: Dict[str, Any], destination: Union[str, Path], format: ConfigFormat) -> None:
         """Save configuration to a destination.
@@ -87,407 +484,43 @@ class DefaultConfigLoader(ConfigLoader):
             config: Configuration dictionary
             destination: Destination file path
             format: Configuration format
-            
+        
         Raises:
-            ValueError: If format is not supported
-            Exception: If saving fails
+            ConfigSaveError: If failed to save
         """
-        # Convert to Path object
-        if isinstance(destination, str):
-            dest_path = Path(destination)
-        else:
-            dest_path = destination
-        
-        # Create parent directories if they don't exist
-        os.makedirs(dest_path.parent, exist_ok=True)
-        
-        # Get format handler
-        handler = self._save_handlers.get(format)
-        if handler is None:
-            raise ValueError(f"Unsupported configuration format: {format}")
+        # Get loader for format
+        loader = self.loaders.get(format)
+        if loader is None:
+            raise ConfigSaveError(f"Unsupported format: {format}")
         
         # Save configuration
-        handler(config, dest_path)
+        loader.save(config, destination)
     
-    def _detect_format(self, path: Path) -> ConfigFormat:
+    def _detect_format(self, source: Union[str, Path]) -> ConfigFormat:
         """Detect configuration format from file extension.
         
         Args:
-            path: File path
+            source: File path
             
         Returns:
             Detected format
-            
-        Raises:
-            ValueError: If format cannot be detected
-        """
-        suffix = path.suffix.lower()
         
-        if suffix == ".json":
+        Raises:
+            ConfigLoadError: If format could not be detected
+        """
+        source_str = str(source)
+        
+        if source_str.endswith((".json", ".json5")):
             return ConfigFormat.JSON
-        elif suffix in (".yaml", ".yml"):
+        elif source_str.endswith((".yaml", ".yml")):
             return ConfigFormat.YAML
-        elif suffix == ".toml":
+        elif source_str.endswith(".toml"):
             return ConfigFormat.TOML
-        elif suffix == ".ini":
+        elif source_str.endswith((".ini", ".cfg", ".conf")):
             return ConfigFormat.INI
-        elif suffix == ".env":
+        elif source_str.endswith((".env", ".envrc")):
             return ConfigFormat.ENV
-        elif suffix == ".py":
+        elif source_str.endswith((".py", ".pyc")):
             return ConfigFormat.PYTHON
         else:
-            raise ValueError(f"Cannot detect configuration format for file: {path}")
-    
-    def _load_json(self, path: Path) -> Dict[str, Any]:
-        """Load JSON configuration.
-        
-        Args:
-            path: File path
-            
-        Returns:
-            Configuration dictionary
-            
-        Raises:
-            Exception: If loading fails
-        """
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    
-    def _load_yaml(self, path: Path) -> Dict[str, Any]:
-        """Load YAML configuration.
-        
-        Args:
-            path: File path
-            
-        Returns:
-            Configuration dictionary
-            
-        Raises:
-            Exception: If loading fails
-        """
-        try:
-            import yaml
-            with open(path, "r", encoding="utf-8") as f:
-                return yaml.safe_load(f)
-        except ImportError:
-            raise ImportError("YAML support requires PyYAML package. Install with 'pip install PyYAML'.")
-    
-    def _load_toml(self, path: Path) -> Dict[str, Any]:
-        """Load TOML configuration.
-        
-        Args:
-            path: File path
-            
-        Returns:
-            Configuration dictionary
-            
-        Raises:
-            Exception: If loading fails
-        """
-        try:
-            import toml
-            with open(path, "r", encoding="utf-8") as f:
-                return toml.load(f)
-        except ImportError:
-            raise ImportError("TOML support requires toml package. Install with 'pip install toml'.")
-    
-    def _load_ini(self, path: Path) -> Dict[str, Any]:
-        """Load INI configuration.
-        
-        Args:
-            path: File path
-            
-        Returns:
-            Configuration dictionary
-            
-        Raises:
-            Exception: If loading fails
-        """
-        try:
-            import configparser
-            parser = configparser.ConfigParser()
-            parser.read(path)
-            
-            result = {}
-            for section in parser.sections():
-                result[section] = {}
-                for key, value in parser[section].items():
-                    result[section][key] = self._infer_type(value)
-            
-            return result
-        except ImportError:
-            raise ImportError("INI support requires configparser package. Install with 'pip install configparser'.")
-    
-    def _load_env(self, path: Path) -> Dict[str, Any]:
-        """Load environment variables from a .env file.
-        
-        Args:
-            path: File path
-            
-        Returns:
-            Configuration dictionary
-            
-        Raises:
-            Exception: If loading fails
-        """
-        result = {}
-        
-        with open(path, "r", encoding="utf-8") as f:
-            for line in f:
-                line = line.strip()
-                if not line or line.startswith("#"):
-                    continue
-                
-                # Remove comments
-                if "#" in line:
-                    line = line.split("#", 1)[0].strip()
-                
-                # Extract key-value pair
-                if "=" in line:
-                    key, value = line.split("=", 1)
-                    key = key.strip()
-                    value = value.strip()
-                    
-                    # Remove quotes
-                    if value and value[0] == value[-1] and value[0] in ('"', "'"):
-                        value = value[1:-1]
-                    
-                    # Add to result
-                    result[key] = self._infer_type(value)
-        
-        return result
-    
-    def _load_python(self, path: Path) -> Dict[str, Any]:
-        """Load configuration from a Python file.
-        
-        Args:
-            path: File path
-            
-        Returns:
-            Configuration dictionary
-            
-        Raises:
-            Exception: If loading fails
-        """
-        # Load module
-        spec = importlib.util.spec_from_file_location("config_module", path)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Failed to load Python module: {path}")
-        
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        
-        # Extract configuration
-        result = {}
-        for key in dir(module):
-            # Skip private attributes and modules
-            if key.startswith("_") or key == "Optional" or key == "Dict" or key == "List":
-                continue
-            
-            # Get attribute
-            value = getattr(module, key)
-            
-            # Skip functions and classes
-            if callable(value) or isinstance(value, type):
-                continue
-            
-            # Add to result
-            result[key] = value
-        
-        return result
-    
-    def _save_json(self, config: Dict[str, Any], path: Path) -> None:
-        """Save configuration as JSON.
-        
-        Args:
-            config: Configuration dictionary
-            path: Destination file path
-            
-        Raises:
-            Exception: If saving fails
-        """
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(config, f, indent=2)
-    
-    def _save_yaml(self, config: Dict[str, Any], path: Path) -> None:
-        """Save configuration as YAML.
-        
-        Args:
-            config: Configuration dictionary
-            path: Destination file path
-            
-        Raises:
-            Exception: If saving fails
-        """
-        try:
-            import yaml
-            with open(path, "w", encoding="utf-8") as f:
-                yaml.safe_dump(config, f, default_flow_style=False)
-        except ImportError:
-            raise ImportError("YAML support requires PyYAML package. Install with 'pip install PyYAML'.")
-    
-    def _save_toml(self, config: Dict[str, Any], path: Path) -> None:
-        """Save configuration as TOML.
-        
-        Args:
-            config: Configuration dictionary
-            path: Destination file path
-            
-        Raises:
-            Exception: If saving fails
-        """
-        try:
-            import toml
-            with open(path, "w", encoding="utf-8") as f:
-                toml.dump(config, f)
-        except ImportError:
-            raise ImportError("TOML support requires toml package. Install with 'pip install toml'.")
-    
-    def _save_ini(self, config: Dict[str, Any], path: Path) -> None:
-        """Save configuration as INI.
-        
-        Args:
-            config: Configuration dictionary
-            path: Destination file path
-            
-        Raises:
-            Exception: If saving fails
-        """
-        try:
-            import configparser
-            parser = configparser.ConfigParser()
-            
-            for section, section_config in config.items():
-                if not isinstance(section_config, dict):
-                    # Skip non-dict sections
-                    continue
-                
-                parser[section] = {}
-                for key, value in section_config.items():
-                    parser[section][key] = str(value)
-            
-            with open(path, "w", encoding="utf-8") as f:
-                parser.write(f)
-        except ImportError:
-            raise ImportError("INI support requires configparser package. Install with 'pip install configparser'.")
-    
-    def _save_env(self, config: Dict[str, Any], path: Path) -> None:
-        """Save configuration as .env file.
-        
-        Args:
-            config: Configuration dictionary
-            path: Destination file path
-            
-        Raises:
-            Exception: If saving fails
-        """
-        # Flatten the configuration
-        flat_config = self._flatten_dict(config)
-        
-        with open(path, "w", encoding="utf-8") as f:
-            for key, value in flat_config.items():
-                # Quote values with spaces or special characters
-                if isinstance(value, str) and (" " in value or "=" in value or "\n" in value):
-                    value = f'"{value}"'
-                
-                f.write(f"{key}={value}\n")
-    
-    def _save_python(self, config: Dict[str, Any], path: Path) -> None:
-        """Save configuration as Python file.
-        
-        Args:
-            config: Configuration dictionary
-            path: Destination file path
-            
-        Raises:
-            Exception: If saving fails
-        """
-        with open(path, "w", encoding="utf-8") as f:
-            f.write("# Generated configuration file\n\n")
-            
-            for key, value in config.items():
-                f.write(f"{key} = {self._python_repr(value)}\n")
-    
-    def _infer_type(self, value: str) -> Any:
-        """Infer the type of a string value.
-        
-        Args:
-            value: String value
-            
-        Returns:
-            Typed value
-        """
-        # Check for null/None
-        if value.lower() in ("null", "none"):
-            return None
-        
-        # Check for boolean
-        if value.lower() in ("true", "yes", "y", "on", "1"):
-            return True
-        if value.lower() in ("false", "no", "n", "off", "0"):
-            return False
-        
-        # Check for integer
-        if re.match(r"^-?\d+$", value):
-            return int(value)
-        
-        # Check for float
-        if re.match(r"^-?\d+\.\d+$", value):
-            return float(value)
-        
-        # String value
-        return value
-    
-    def _flatten_dict(self, d: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
-        """Flatten a nested dictionary.
-        
-        Args:
-            d: Dictionary to flatten
-            prefix: Prefix for keys
-            
-        Returns:
-            Flattened dictionary
-        """
-        result = {}
-        
-        for key, value in d.items():
-            if prefix:
-                new_key = f"{prefix}_{key}"
-            else:
-                new_key = key
-            
-            if isinstance(value, dict):
-                result.update(self._flatten_dict(value, new_key))
-            else:
-                result[new_key] = value
-        
-        return result
-    
-    def _python_repr(self, value: Any) -> str:
-        """Convert a value to its Python representation.
-        
-        Args:
-            value: Value to convert
-            
-        Returns:
-            Python representation
-        """
-        if value is None:
-            return "None"
-        elif isinstance(value, (int, float, bool)):
-            return str(value)
-        elif isinstance(value, str):
-            return repr(value)
-        elif isinstance(value, (list, tuple, set)):
-            items = ", ".join(self._python_repr(item) for item in value)
-            if isinstance(value, list):
-                return f"[{items}]"
-            elif isinstance(value, tuple):
-                return f"({items})"
-            else:  # set
-                return f"{{{items}}}"
-        elif isinstance(value, dict):
-            items = ", ".join(f"{self._python_repr(k)}: {self._python_repr(v)}" for k, v in value.items())
-            return f"{{{items}}}"
-        else:
-            return repr(value)
+            raise ConfigLoadError(f"Could not detect format for: {source}")

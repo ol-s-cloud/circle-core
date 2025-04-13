@@ -71,7 +71,7 @@ pip install circle-core[docs]
 
 - **Storage**: Unified storage interface with transparent encryption and multiple backends
 - **Package Registry**: Package management with versioning, validation, and dependency resolution
-- **Licensing**: Coming soon - License validation and management system
+- **Licensing**: Feature-based license validation and management system
 - **Configuration**: Coming soon - Configuration management and validation
 
 ## Getting Started
@@ -135,6 +135,31 @@ results = registry_manager.search_packages("example")
 
 # Download a package
 package_data = registry_manager.download_package("example-package", "1.0.0")
+```
+
+### Licensing Example
+
+```python
+from circle_core.infrastructure.licensing import (
+    has_feature, verify_feature, register_license,
+    FEATURE_STORAGE, FEATURE_ENCRYPTION
+)
+
+# Register a license
+with open("license_file.txt", "r") as f:
+    license_data = f.read()
+register_license(license_data)
+
+# Check if a feature is available
+if has_feature(FEATURE_STORAGE):
+    print("Storage feature is available")
+
+# Verify feature access (raises exception if not available)
+try:
+    verify_feature(FEATURE_ENCRYPTION)
+    print("Encryption feature is available")
+except LicenseFeatureNotAvailableError:
+    print("Encryption feature not available in current license")
 ```
 
 See the [examples directory](docs/examples/) for more detailed examples.

@@ -4,6 +4,8 @@ This module provides comprehensive license validation and management capabilitie
 for Circle Core applications and components.
 """
 
+from typing import Dict, List, Optional, Any, Set
+
 from .interface import (
     License, LicenseType, LicenseStatus, LicenseFeature,
     LicenseValidator, LicenseManager, LicenseStorage, LicenseRevocationList,
@@ -17,6 +19,7 @@ from .models import (
 
 from .validation import CryptoLicenseValidator
 from .storage import FileSystemLicenseStorage
+from .revocation import FileSystemRevocationList
 from .manager import CoreLicenseManager
 
 # Set up default license manager

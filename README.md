@@ -2,6 +2,17 @@
 
 Core framework and infrastructure for the Circle Core ecosystem. Provides a foundation of security, infrastructure, and development tools for building secure, scalable applications.
 
+## Project Status
+
+[![Project Status](https://img.shields.io/badge/status-active-brightgreen)](PROJECT_STATUS.md)
+[![Security Focus](https://img.shields.io/badge/focus-security-blue)](GAP_ANALYSIS.md)
+[![Sprint](https://img.shields.io/badge/sprint-2-orange)](SPRINT_STATUS.md)
+
+**Project Documentation:**
+- [📊 Project Status](PROJECT_STATUS.md) - Overall project progress and component status
+- [🔍 Gap Analysis](GAP_ANALYSIS.md) - Detailed comparison of current state vs. target architecture
+- [🏃 Sprint Status](SPRINT_STATUS.md) - Current sprint goals, achievements, and metrics
+
 ## Overview
 
 Circle Core is a comprehensive platform for building, deploying, and managing secure applications. It provides:
@@ -182,9 +193,11 @@ pip install -e ".[dev,test]"
 pytest
 ```
 
-## Project Status
+## Project Documentation
 
-See [SPRINT_STATUS.md](SPRINT_STATUS.md) for current development status.
+- [Project Status](PROJECT_STATUS.md) - Overall project progress and component status
+- [Gap Analysis](GAP_ANALYSIS.md) - Detailed comparison of current state vs. target architecture
+- [Sprint Status](SPRINT_STATUS.md) - Current sprint goals, achievements, and metrics
 
 ## License
 

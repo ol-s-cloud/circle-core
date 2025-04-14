@@ -7,11 +7,13 @@ Core framework and infrastructure for the Circle Core ecosystem. Provides a foun
 [![Project Status](https://img.shields.io/badge/status-active-brightgreen)](PROJECT_STATUS.md)
 [![Security Focus](https://img.shields.io/badge/focus-security-blue)](GAP_ANALYSIS.md)
 [![Sprint](https://img.shields.io/badge/sprint-2-orange)](SPRINT_STATUS.md)
+[![Test Coverage](https://img.shields.io/badge/coverage-92%25-green)](AUDIT_FRAMEWORK.md)
 
 **Project Documentation:**
 - [📊 Project Status](PROJECT_STATUS.md) - Overall project progress and component status
 - [🔍 Gap Analysis](GAP_ANALYSIS.md) - Detailed comparison of current state vs. target architecture
 - [🏃 Sprint Status](SPRINT_STATUS.md) - Current sprint goals, achievements, and metrics
+- [🔒 Audit Framework](AUDIT_FRAMEWORK.md) - Testing and audit guidelines for quality assurance
 
 ## Overview
 
@@ -198,6 +200,7 @@ pytest
 - [Project Status](PROJECT_STATUS.md) - Overall project progress and component status
 - [Gap Analysis](GAP_ANALYSIS.md) - Detailed comparison of current state vs. target architecture
 - [Sprint Status](SPRINT_STATUS.md) - Current sprint goals, achievements, and metrics
+- [Audit Framework](AUDIT_FRAMEWORK.md) - Testing and audit guidelines for quality assurance
 
 ## License
 

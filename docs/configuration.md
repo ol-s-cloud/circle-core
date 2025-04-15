@@ -96,7 +96,7 @@ schema = {
             "required": ["host", "port"],
             "properties": {
                 "host": {"type": "string"},
-                "port": {"type": "integer"},
+                "port": {"type": "integer", "minimum": 1, "maximum": 65535},
                 "username": {"type": "string"},
                 "password": {"type": "string"}
             }
@@ -104,18 +104,19 @@ schema = {
     }
 }
 
-# Create a schema validator
+# Create a schema object
 json_schema = JsonSchema(schema)
 
 # Register the schema with the manager
-get_config_manager().register_schema(json_schema)
+manager = get_config_manager()
+manager.register_schema(json_schema)
 
 # Validate the configuration
-result = get_config_manager().validate(level=ValidationLevel.SCHEMA)
+result = manager.validate(level=ValidationLevel.STRICT)
 if not result:
     print("Configuration validation failed:")
     for error in result.errors:
-        print(f"  - {error}")
+        print(f"- {error}")
 ```
 
 ### Using Dataclass Schemas
@@ -127,7 +128,7 @@ from circle_core.infrastructure.configuration import (
     get_config_manager, DataclassSchema
 )
 
-# Define configuration structure with dataclasses
+# Define configuration classes
 @dataclass
 class AppConfig:
     name: str
@@ -138,7 +139,7 @@ class AppConfig:
 class DatabaseConfig:
     host: str
     port: int
-    username: str = "default"
+    username: str = ""
     password: str = ""
 
 @dataclass
@@ -147,198 +148,207 @@ class RootConfig:
     database: DatabaseConfig
     logging: Dict[str, Any] = field(default_factory=dict)
 
-# Create a schema validator
+# Create a schema object
 dataclass_schema = DataclassSchema(RootConfig)
 
 # Register the schema with the manager
-get_config_manager().register_schema(dataclass_schema)
+manager = get_config_manager()
+manager.register_schema(dataclass_schema)
 
-# Get typed configuration
-config = get_config_manager().get_all()
-typed_config = dataclass_schema.parse(config)
+# Get a typed configuration object
+config_dict = manager.get_all()
+typed_config = dataclass_schema.parse(config_dict)
 
-# Access strongly-typed configuration
-app_name = typed_config.app.name
-db_port = typed_config.database.port
+# Now you can use typed access
+print(f"App name: {typed_config.app.name}")
+print(f"Database port: {typed_config.database.port}")
 ```
 
-## Configuration Sources
+## Configuration Environments
 
-The module supports multiple configuration sources with different priorities:
-
-1. **File-based configuration**: Load from JSON, YAML, TOML, INI, or other formats
-2. **Environment variables**: Access system environment variables
-3. **In-memory dictionaries**: Programmatically defined configuration
-4. **Default values**: Fallback values when no other source defines a setting
-5. **Remote sources**: (Custom implementation) Load from remote APIs or services
-6. **Secret stores**: (Custom implementation) Load sensitive values from secure storage
-
-When a configuration value is requested, the manager checks all registered sources in order of priority (higher priority first) until it finds a matching key.
-
-### Configuration Priority
-
-You can set priorities when registering configuration sources:
-
-```python
-# Higher priority (200) will override lower priority (100)
-manager.register_source(file_path, ConfigSource.FILE, priority=100)
-manager.register_source(env_config, ConfigSource.ENVIRONMENT, priority=200)
-```
-
-## Environment-specific Configuration
-
-The configuration manager supports different environments:
+The configuration system supports different environments (development, testing, staging, production), allowing you to have environment-specific settings:
 
 ```python
 from circle_core.infrastructure.configuration import (
-    get_config_manager, ConfigEnvironment
+    ConfigEnvironment, create_config_manager
 )
 
-# Set the current environment
-get_config_manager().set_environment(ConfigEnvironment.PRODUCTION)
+# Create a manager for a specific environment
+manager = create_config_manager(environment=ConfigEnvironment.PRODUCTION)
 
-# Check the current environment
-current_env = get_config_manager().get_environment()
-if current_env == ConfigEnvironment.DEVELOPMENT:
-    # Enable development features
-    pass
+# Load different configuration files based on environment
+env = manager.get_environment()
+manager.register_source(
+    f"config/app.{env.value}.json", ConfigSource.FILE, priority=100
+)
 ```
 
-Available environments:
-- `ConfigEnvironment.DEVELOPMENT`
-- `ConfigEnvironment.TESTING`
-- `ConfigEnvironment.STAGING`
-- `ConfigEnvironment.PRODUCTION`
-- `ConfigEnvironment.CUSTOM`
+## Using Multiple Configuration Sources
 
-## Configuration Formats
-
-The system supports multiple file formats:
-
-- **JSON**: Most common format
-- **YAML**: Requires PyYAML package
-- **TOML**: Requires tomli/tomllib package
-- **INI**: Simple key-value format
-- **ENV**: Environment variable files
-- **Python modules**: Python files with uppercase variables
-
-## Advanced Usage
-
-### Namespaced Configuration
-
-You can organize configuration into namespaces:
+The configuration system supports multiple sources with priority, allowing higher-priority sources to override lower-priority ones:
 
 ```python
-# Get all values in a specific namespace
-db_config = get_config_manager().get_namespace("database")
+from circle_core.infrastructure.configuration import (
+    get_config_manager, ConfigSource
+)
+
+manager = get_config_manager()
+
+# Register sources with different priorities
+# (higher numbers mean higher priority)
+
+# Default values (lowest priority)
+manager.register_source(
+    {"app": {"name": "DefaultApp"}}, 
+    ConfigSource.DEFAULT, 
+    priority=10
+)
+
+# Configuration file (medium priority)
+manager.register_source(
+    "config/app.json", 
+    ConfigSource.FILE, 
+    priority=100
+)
+
+# Environment variables (highest priority)
+manager.register_source(
+    {"prefix": "MYAPP_", "separator": "__"}, 
+    ConfigSource.ENVIRONMENT, 
+    priority=200
+)
+
+# Load all sources
+manager.load()
+```
+
+## Namespaced Configuration
+
+You can organize configuration values into namespaces:
+
+```python
+from circle_core.infrastructure.configuration import get_config_manager
+
+manager = get_config_manager()
+
+# Get all values in a namespace
+app_config = manager.get_namespace("app")
+db_config = manager.get_namespace("database")
 
 # Register a source for a specific namespace
 manager.register_source(
-    {"host": "localhost", "port": 5432},
-    ConfigSource.MEMORY,
+    {"host": "db.example.com", "port": 5432}, 
+    ConfigSource.MEMORY, 
     priority=100,
     namespace="database"
 )
 ```
 
-### Creating a Custom ConfigProvider
+## Advanced Features
 
-You can create custom providers by implementing the `ConfigProvider` interface:
+### Custom Configuration Providers
 
-```python
-from circle_core.infrastructure.configuration import ConfigProvider
-
-class MyCustomProvider(ConfigProvider):
-    def get(self, key, default=None):
-        # Custom implementation
-        pass
-    
-    def set(self, key, value):
-        # Custom implementation
-        pass
-    
-    def has(self, key):
-        # Custom implementation
-        pass
-    
-    def delete(self, key):
-        # Custom implementation
-        pass
-    
-    def get_all(self):
-        # Custom implementation
-        pass
-    
-    def set_many(self, config, prefix=""):
-        # Custom implementation
-        pass
-    
-    def clear(self):
-        # Custom implementation
-        pass
-
-# Register custom provider
-manager.register_source(
-    MyCustomProvider(), ConfigSource.REMOTE, priority=150
-)
-```
-
-### Custom Validation
+You can create custom configuration providers by implementing the `ConfigProvider` interface:
 
 ```python
 from circle_core.infrastructure.configuration import (
-    range_validator, length_validator, pattern_validator
+    ConfigProvider, get_config_manager, ConfigSource
 )
 
-# Create validators
-port_validator = range_validator(min_value=1, max_value=65535)
-name_validator = length_validator(min_length=3, max_length=50)
-version_validator = pattern_validator(r"^\d+\.\d+\.\d+$")
+class MyCustomProvider(ConfigProvider):
+    def get(self, key, default=None):
+        # Implementation
+        pass
+    
+    def set(self, key, value):
+        # Implementation
+        pass
+    
+    def has(self, key):
+        # Implementation
+        pass
+    
+    def delete(self, key):
+        # Implementation
+        pass
+    
+    def get_all(self):
+        # Implementation
+        pass
+    
+    def set_many(self, config, prefix=""):
+        # Implementation
+        pass
+    
+    def clear(self):
+        # Implementation
+        pass
 
-# Use them in dataclass metadata or custom validators
-@dataclass
-class AppConfig:
-    name: str = field(metadata={"validators": [name_validator]})
-    version: str = field(metadata={"validators": [version_validator]})
-
-@dataclass
-class DatabaseConfig:
-    port: int = field(metadata={"validators": [port_validator]})
+# Register your custom provider
+manager = get_config_manager()
+manager.register_source(
+    MyCustomProvider(), ConfigSource.REMOTE, priority=100
+)
 ```
 
-## Security Considerations
+### Custom Validators
 
-1. **Sensitive Information**: Avoid storing sensitive information like passwords, API keys, and tokens in plain text configuration files. Instead, use environment variables or a secure secrets manager.
+You can create custom validators for configuration values:
 
-2. **Configuration Sources**: Remember that higher priority sources override lower priority ones. Ensure that critical security settings cannot be overridden by less secure sources.
+```python
+from circle_core.infrastructure.configuration import (
+    range_validator, length_validator, pattern_validator,
+    enum_validator, type_validator
+)
 
-3. **Validation**: Always validate configuration, especially when accepting values from external sources like environment variables or remote APIs.
+# Built-in validators
+port_validator = range_validator(min_value=1, max_value=65535)
+name_validator = length_validator(min_length=3, max_length=50)
+email_validator = pattern_validator(r'^[\w\.-]+@[\w\.-]+\.\w+$')
+mode_validator = enum_validator(["development", "production", "testing"])
+list_validator = type_validator(list)
 
-4. **Audit Logging**: The configuration manager supports an optional audit logger to track configuration changes.
-
-## Integration with Other Components
-
-The configuration system is designed to integrate with other Circle Core components:
-
-- **Security**: Works with encryption and secrets management
-- **Audit Logging**: Can log configuration changes for compliance and debugging
-- **Storage**: Supports loading and saving configuration from Circle Core storage services
+# Custom validator
+def custom_validator(value):
+    if not is_valid(value):
+        return "Value does not meet custom criteria"
+    return None  # No error
+```
 
 ## Best Practices
 
-1. **Centralize Configuration**: Use a single configuration manager instance for the entire application.
-
-2. **Define Schemas**: Always define and validate schemas to catch configuration errors early.
-
-3. **Use Typed Configuration**: Leverage dataclass schemas for strong typing and IDE support.
-
-4. **Layer Configuration**: Use different priority levels for:
+1. **Use a layered approach**:
    - Default values (lowest priority)
-   - Application configuration files
-   - Environment-specific overrides
-   - Command-line options
+   - Configuration files (medium priority)
    - Environment variables (highest priority)
 
-5. **Namespace Configuration**: Organize configuration into logical namespaces.
+2. **Always define schemas** for validation and type checking
 
-6. **Document Configuration**: Include comments and descriptions in schemas to document the purpose of each setting.
+3. **Use environment-specific configuration files** when appropriate
+
+4. **Keep secrets out of configuration files**:
+   - Use environment variables for secrets
+   - Use secret management services for production
+
+5. **Use namespaces** to organize configuration logically
+
+6. **Validate configuration early** in application startup
+
+## Configuration File Formats
+
+The configuration system supports multiple file formats:
+
+- **JSON**: `.json` files
+- **YAML**: `.yaml` or `.yml` files (if PyYAML is installed)
+- **TOML**: `.toml` files (if toml/tomli is installed)
+- **INI**: `.ini` or `.cfg` files
+- **ENV**: `.env` files for environment variable definitions
+- **Python**: `.py` files with uppercase variables as configuration
+
+## Security Considerations
+
+1. **Never store sensitive information** in plaintext configuration files
+2. **Use environment variables or secret management services** for sensitive information
+3. **Validate all configuration values** before use
+4. **Apply the principle of least privilege** when setting up configuration access
+5. **Consider encrypting sensitive configuration files** when necessary

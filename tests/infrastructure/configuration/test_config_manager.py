@@ -249,3 +249,302 @@ class TestConfigManager(unittest.TestCase):
         # Change the environment
         env_manager.set_environment(ConfigEnvironment.TESTING)
         self.assertEqual(env_manager.get_environment(), ConfigEnvironment.TESTING)
+    
+    def test_schema_validation_json(self):
+        """Test validation with a JSON schema."""
+        # Create a JSON schema
+        schema = {
+            "type": "object",
+            "required": ["app", "database"],
+            "properties": {
+                "app": {
+                    "type": "object",
+                    "required": ["name", "version"],
+                    "properties": {
+                        "name": {"type": "string"},
+                        "version": {"type": "string"},
+                        "debug": {"type": "boolean"}
+                    }
+                },
+                "database": {
+                    "type": "object",
+                    "required": ["host", "port", "username", "password"],
+                    "properties": {
+                        "host": {"type": "string"},
+                        "port": {"type": "integer"},
+                        "username": {"type": "string"},
+                        "password": {"type": "string"}
+                    }
+                }
+            }
+        }
+        
+        json_schema = JsonSchema(schema)
+        
+        # Register the schema with the manager
+        self.manager.register_schema(json_schema)
+        
+        # Register a valid configuration
+        self.manager.register_source(
+            self.sample_config, ConfigSource.MEMORY, priority=100
+        )
+        
+        # Load the configuration
+        self.manager.load()
+        
+        # Validate the configuration
+        result = self.manager.validate()
+        self.assertTrue(result.is_valid)
+        self.assertEqual(len(result.errors), 0)
+        
+        # Create a manager with invalid configuration
+        invalid_manager = StandardConfigManager()
+        invalid_manager.register_schema(json_schema)
+        
+        invalid_config = {
+            "app": {
+                "name": "TestApp",
+                # Missing required "version" field
+                "debug": "not a boolean"  # Wrong type
+            }
+        }
+        
+        invalid_manager.register_source(
+            invalid_config, ConfigSource.MEMORY, priority=100
+        )
+        
+        invalid_manager.load()
+        
+        # Validate the configuration
+        invalid_result = invalid_manager.validate()
+        self.assertFalse(invalid_result.is_valid)
+        self.assertGreater(len(invalid_result.errors), 0)
+    
+    def test_schema_validation_dataclass(self):
+        """Test validation with a dataclass schema."""
+        # Create a dataclass schema
+        @dataclass
+        class AppConfig:
+            name: str
+            version: str
+            debug: bool = True
+        
+        @dataclass
+        class DatabaseConfig:
+            host: str
+            port: int
+            username: str
+            password: str
+        
+        @dataclass
+        class RootConfig:
+            app: AppConfig
+            database: DatabaseConfig
+            logging: Dict[str, Any] = field(default_factory=dict)
+        
+        dataclass_schema = DataclassSchema(RootConfig)
+        
+        # Register the schema with the manager
+        self.manager.register_schema(dataclass_schema)
+        
+        # Register a valid configuration
+        self.manager.register_source(
+            self.sample_config, ConfigSource.MEMORY, priority=100
+        )
+        
+        # Load the configuration
+        self.manager.load()
+        
+        # Validate the configuration
+        result = self.manager.validate()
+        self.assertTrue(result.is_valid)
+        self.assertEqual(len(result.errors), 0)
+        
+        # Parse the configuration to a typed object
+        parsed_config = dataclass_schema.parse(self.sample_config)
+        self.assertIsInstance(parsed_config, RootConfig)
+        self.assertIsInstance(parsed_config.app, AppConfig)
+        self.assertIsInstance(parsed_config.database, DatabaseConfig)
+        self.assertEqual(parsed_config.app.name, "TestApp")
+        self.assertEqual(parsed_config.database.port, 5432)
+    
+    def test_create_config_manager_factory(self):
+        """Test the create_config_manager factory function."""
+        # Create a manager with the factory function
+        manager = create_config_manager(
+            environment=ConfigEnvironment.STAGING,
+            env_prefix="MYAPP_",
+            env_separator="__"
+        )
+        
+        # Check the manager type
+        self.assertIsInstance(manager, StandardConfigManager)
+        
+        # Check the environment
+        self.assertEqual(manager.get_environment(), ConfigEnvironment.STAGING)
+    
+    def test_factory_defaults(self):
+        """Test that the factory creates a manager with default values."""
+        # Create a manager with the factory function
+        manager = create_config_manager()
+        
+        # Check the environment
+        self.assertEqual(manager.get_environment(), ConfigEnvironment.DEVELOPMENT)
+    
+    def test_validation_levels(self):
+        """Test different validation levels."""
+        # Create a JSON schema
+        schema = {
+            "type": "object",
+            "required": ["app"],
+            "properties": {
+                "app": {
+                    "type": "object",
+                    "required": ["name"],
+                    "properties": {
+                        "name": {"type": "string"}
+                    }
+                }
+            }
+        }
+        
+        json_schema = JsonSchema(schema)
+        
+        # Register the schema with the manager
+        self.manager.register_schema(json_schema)
+        
+        # Register a valid configuration
+        self.manager.register_source(
+            {"app": {"name": "TestApp"}}, ConfigSource.MEMORY, priority=100
+        )
+        
+        # Load the configuration
+        self.manager.load()
+        
+        # Test NONE validation level
+        none_result = self.manager.validate(level=ValidationLevel.NONE)
+        self.assertTrue(none_result.is_valid)
+        self.assertEqual(len(none_result.errors), 0)
+        
+        # Test SCHEMA validation level
+        schema_result = self.manager.validate(level=ValidationLevel.SCHEMA)
+        self.assertTrue(schema_result.is_valid)
+        self.assertEqual(len(schema_result.errors), 0)
+        
+        # Test STRICT validation level
+        strict_result = self.manager.validate(level=ValidationLevel.STRICT)
+        self.assertTrue(strict_result.is_valid)
+        self.assertEqual(len(strict_result.errors), 0)
+    
+    def test_multiple_namespaced_sources(self):
+        """Test multiple sources with different namespaces."""
+        # Register a source for app namespace
+        app_config = {"name": "TestApp", "version": "1.0.0"}
+        self.manager.register_source(
+            app_config, ConfigSource.MEMORY, priority=100, namespace="app"
+        )
+        
+        # Register a source for database namespace
+        db_config = {"host": "localhost", "port": 5432}
+        self.manager.register_source(
+            db_config, ConfigSource.MEMORY, priority=100, namespace="database"
+        )
+        
+        # Load the configuration
+        self.manager.load()
+        
+        # Check values from different namespaces
+        self.assertEqual(self.manager.get("app.name"), "TestApp")
+        self.assertEqual(self.manager.get("database.port"), 5432)
+        
+        # Test get_namespace function
+        app_namespace = self.manager.get_namespace("app")
+        self.assertEqual(app_namespace["name"], "TestApp")
+        
+        db_namespace = self.manager.get_namespace("database")
+        self.assertEqual(db_namespace["port"], 5432)
+    
+    def test_different_file_formats(self):
+        """Test loading configuration from different file formats."""
+        # Create a YAML file (if PyYAML is available)
+        try:
+            import yaml
+            yaml_config_path = Path(self.temp_dir.name) / "config.yaml"
+            with open(yaml_config_path, "w") as f:
+                yaml.dump(self.sample_config, f)
+            
+            # Create a manager
+            yaml_manager = StandardConfigManager()
+            
+            # Register the YAML file
+            yaml_manager.register_source(
+                yaml_config_path, ConfigSource.FILE, priority=100
+            )
+            
+            # Load the configuration
+            yaml_manager.load()
+            
+            # Check values
+            self.assertEqual(yaml_manager.get("app.name"), "TestApp")
+            self.assertEqual(yaml_manager.get("database.port"), 5432)
+        except ImportError:
+            # Skip if PyYAML is not available
+            pass
+        
+        # Create a JSON file
+        json_config_path = Path(self.temp_dir.name) / "config.json"
+        with open(json_config_path, "w") as f:
+            json.dump(self.sample_config, f)
+        
+        # Create a manager
+        json_manager = StandardConfigManager()
+        
+        # Register the JSON file
+        json_manager.register_source(
+            json_config_path, ConfigSource.FILE, priority=100
+        )
+        
+        # Load the configuration
+        json_manager.load()
+        
+        # Check values
+        self.assertEqual(json_manager.get("app.name"), "TestApp")
+        self.assertEqual(json_manager.get("database.port"), 5432)
+    
+    def test_chain_provider_ordering(self):
+        """Test that the chain provider maintains the correct ordering of providers."""
+        # Create several sources with different priorities
+        self.manager.register_source(
+            {"key": "priority_10"}, ConfigSource.MEMORY, priority=10
+        )
+        
+        self.manager.register_source(
+            {"key": "priority_20"}, ConfigSource.MEMORY, priority=20
+        )
+        
+        self.manager.register_source(
+            {"key": "priority_5"}, ConfigSource.MEMORY, priority=5
+        )
+        
+        self.manager.register_source(
+            {"key": "priority_15"}, ConfigSource.MEMORY, priority=15
+        )
+        
+        # Load the configuration
+        self.manager.load()
+        
+        # The highest priority should win
+        self.assertEqual(self.manager.get("key"), "priority_20")
+        
+        # Add an even higher priority
+        self.manager.register_source(
+            {"key": "priority_30"}, ConfigSource.MEMORY, priority=30
+        )
+        
+        # The new highest priority should win
+        self.manager.load()
+        self.assertEqual(self.manager.get("key"), "priority_30")
+
+
+if __name__ == "__main__":
+    unittest.main()

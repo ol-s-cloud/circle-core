@@ -6,8 +6,8 @@ metadata:
     app: circle-core
 spec:
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteOnce  # Allows read-write by a single node
   resources:
     requests:
-      storage: 10Gi
-  storageClassName: standard
+      storage: 10Gi  # Request 10GB of storage
+  storageClassName: standard  # Use the default storage class

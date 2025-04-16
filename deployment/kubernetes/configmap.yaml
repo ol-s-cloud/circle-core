@@ -5,17 +5,18 @@ metadata:
   labels:
     app: circle-core
 data:
+  # Configuration for the Circle Core application
   config.json: |
     {
       "app": {
         "name": "Circle Core",
-        "environment": "development",
+        "environment": "${CIRCLE_ENV}",
         "debug": false,
         "log_level": "INFO",
         "api": {
           "host": "0.0.0.0",
           "port": 8000,
-          "workers": 2
+          "workers": 4
         }
       },
       "security": {
@@ -24,19 +25,20 @@ data:
           "key_rotation_days": 30
         },
         "authentication": {
-          "session_timeout_minutes": 30,
+          "session_timeout_minutes": 15,
           "mfa_enabled": true,
           "password_policy": {
             "min_length": 12,
             "require_uppercase": true,
             "require_lowercase": true,
             "require_numbers": true,
-            "require_special": true
+            "require_special": true,
+            "max_age_days": 90
           }
         },
         "audit": {
           "enabled": true,
-          "retention_days": 90
+          "retention_days": 365
         }
       },
       "storage": {
@@ -46,19 +48,22 @@ data:
       },
       "database": {
         "type": "postgres",
-        "host": "postgres",
-        "port": 5432,
-        "name": "circlecore",
-        "user": "circle",
-        "pool_size": 10
+        "host": "${DB_HOST}",
+        "port": ${DB_PORT},
+        "name": "${DB_NAME}",
+        "user": "${DB_USER}",
+        "pool_size": 20,
+        "ssl_enabled": true
       },
       "cache": {
         "type": "redis",
-        "host": "redis",
-        "port": 6379,
-        "ttl_seconds": 600
+        "host": "${REDIS_HOST}",
+        "port": ${REDIS_PORT},
+        "ttl_seconds": 1200
       }
     }
+  
+  # Prometheus configuration
   prometheus.yml: |
     global:
       scrape_interval: 15s
@@ -68,4 +73,14 @@ data:
       - job_name: 'circle-core'
         static_configs:
           - targets: ['circle-core:8000']
-        metrics_path: '/metrics'
+        metrics_path: /metrics
+  
+  # Default environment variables
+  env.properties: |
+    CIRCLE_LOG_LEVEL=INFO
+    DB_HOST=postgres
+    DB_PORT=5432
+    DB_NAME=circlecore
+    DB_USER=circle
+    REDIS_HOST=redis
+    REDIS_PORT=6379

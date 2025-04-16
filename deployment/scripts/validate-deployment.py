@@ -281,35 +281,57 @@ def check_aws_deployment(config):
     try:
         print("Checking AWS resources...")
         # Add specific AWS resource checks here (e.g., EC2 instances, RDS, etc.)
-        # This would typically involve using boto3 to query AWS resources
         
-        # Example: Check ECS service status (if using ECS)
-        # Note: This is just an example and would need boto3 library
-        """
-        import boto3
-        ecs = boto3.client('ecs')
-        cluster_name = "circle-core-cluster"
-        service_name = "circle-core-service"
+        # Check ECS service if using ECS
+        try:
+            ecs_result = subprocess.run(
+                ["aws", "ecs", "describe-services", "--cluster", "circle-core", "--services", "circle-core"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            ecs_data = json.loads(ecs_result.stdout)
+            if ecs_data.get("services"):
+                service = ecs_data["services"][0]
+                desired_count = service.get("desiredCount", 0)
+                running_count = service.get("runningCount", 0)
+                
+                if running_count < desired_count:
+                    failures.append(f"ECS service has {running_count}/{desired_count} running tasks")
+                    print(f"❌ ECS service has {running_count}/{desired_count} running tasks")
+                else:
+                    print(f"✅ ECS service has {running_count}/{desired_count} running tasks")
+        except subprocess.CalledProcessError:
+            # ECS might not be used, so this is not a critical failure
+            print("⚠️ ECS service check skipped (ECS might not be used)")
         
-        response = ecs.describe_services(
-            cluster=cluster_name,
-            services=[service_name]
-        )
+        # Check Lambda function if using Lambda
+        try:
+            lambda_result = subprocess.run(
+                ["aws", "lambda", "get-function", "--function-name", "circle-core"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            lambda_data = json.loads(lambda_result.stdout)
+            if lambda_data.get("Configuration"):
+                state = lambda_data["Configuration"].get("State")
+                last_update = lambda_data["Configuration"].get("LastUpdateStatus")
+                
+                if state != "Active" or last_update != "Successful":
+                    failures.append(f"Lambda function state: {state}, last update: {last_update}")
+                    print(f"❌ Lambda function state: {state}, last update: {last_update}")
+                else:
+                    print(f"✅ Lambda function is active and updated successfully")
+        except subprocess.CalledProcessError:
+            # Lambda might not be used, so this is not a critical failure
+            print("⚠️ Lambda function check skipped (Lambda might not be used)")
         
-        if len(response['services']) > 0:
-            service = response['services'][0]
-            if service['status'] == 'ACTIVE':
-                print(f"✅ ECS service '{service_name}' is active")
-            else:
-                failures.append(f"ECS service '{service_name}' status is {service['status']}")
-                print(f"❌ ECS service '{service_name}' status is {service['status']}")
-        else:
-            failures.append(f"ECS service '{service_name}' not found")
-            print(f"❌ ECS service '{service_name}' not found")
-        """
     except Exception as e:
-        print(f"❌ Error checking AWS resources: {str(e)}")
         failures.append(f"Error checking AWS resources: {str(e)}")
+        print(f"❌ Error checking AWS resources: {str(e)}")
     
     return failures
 
@@ -333,7 +355,7 @@ def check_azure_deployment(config):
         print(f"❌ Error getting endpoint from Terraform outputs: {str(e)}")
         failures.append(f"Error getting endpoint from Terraform outputs: {str(e)}")
     
-    # Check health endpoint if available
+    # Check health endpoint
     if config.get("health_endpoint"):
         print(f"Checking health endpoint: {config['health_endpoint']}")
         
@@ -364,32 +386,51 @@ def check_azure_deployment(config):
     # Check Azure resources
     try:
         print("Checking Azure resources...")
-        # Add specific Azure resource checks here
-        # This would typically involve using azure-sdk-for-python
+        # Check App Service if using App Service
+        try:
+            appservice_result = subprocess.run(
+                ["az", "webapp", "show", "--name", "circle-core", "--resource-group", "circle-core"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            appservice_data = json.loads(appservice_result.stdout)
+            state = appservice_data.get("state", "")
+            
+            if state != "Running":
+                failures.append(f"App Service state: {state}")
+                print(f"❌ App Service state: {state}")
+            else:
+                print(f"✅ App Service is running")
+        except subprocess.CalledProcessError:
+            # App Service might not be used, so this is not a critical failure
+            print("⚠️ App Service check skipped (App Service might not be used)")
         
-        # Example: Check App Service status (if using Azure App Service)
-        # Note: This is just an example and would need azure-mgmt-web library
-        """
-        from azure.mgmt.web import WebSiteManagementClient
-        from azure.identity import DefaultAzureCredential
+        # Check AKS cluster if using AKS
+        try:
+            aks_result = subprocess.run(
+                ["az", "aks", "show", "--name", "circle-core", "--resource-group", "circle-core"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            aks_data = json.loads(aks_result.stdout)
+            provisioning_state = aks_data.get("provisioningState", "")
+            
+            if provisioning_state != "Succeeded":
+                failures.append(f"AKS cluster provisioning state: {provisioning_state}")
+                print(f"❌ AKS cluster provisioning state: {provisioning_state}")
+            else:
+                print(f"✅ AKS cluster is provisioned successfully")
+        except subprocess.CalledProcessError:
+            # AKS might not be used, so this is not a critical failure
+            print("⚠️ AKS cluster check skipped (AKS might not be used)")
         
-        credential = DefaultAzureCredential()
-        web_client = WebSiteManagementClient(credential, subscription_id)
-        
-        resource_group = "circle-core-rg"
-        app_service_name = "circle-core-app"
-        
-        app_service = web_client.web_apps.get(resource_group, app_service_name)
-        
-        if app_service.state == "Running":
-            print(f"✅ App Service '{app_service_name}' is running")
-        else:
-            failures.append(f"App Service '{app_service_name}' state is {app_service.state}")
-            print(f"❌ App Service '{app_service_name}' state is {app_service.state}")
-        """
     except Exception as e:
-        print(f"❌ Error checking Azure resources: {str(e)}")
         failures.append(f"Error checking Azure resources: {str(e)}")
+        print(f"❌ Error checking Azure resources: {str(e)}")
     
     return failures
 
@@ -413,7 +454,7 @@ def check_gcp_deployment(config):
         print(f"❌ Error getting endpoint from Terraform outputs: {str(e)}")
         failures.append(f"Error getting endpoint from Terraform outputs: {str(e)}")
     
-    # Check health endpoint if available
+    # Check health endpoint
     if config.get("health_endpoint"):
         print(f"Checking health endpoint: {config['health_endpoint']}")
         
@@ -444,76 +485,57 @@ def check_gcp_deployment(config):
     # Check GCP resources
     try:
         print("Checking GCP resources...")
-        # Add specific GCP resource checks here
-        # This would typically involve using google-cloud-python libraries
+        # Check GKE cluster if using GKE
+        try:
+            gke_result = subprocess.run(
+                ["gcloud", "container", "clusters", "describe", "circle-core", "--format", "json"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            gke_data = json.loads(gke_result.stdout)
+            status = gke_data.get("status", "")
+            
+            if status != "RUNNING":
+                failures.append(f"GKE cluster status: {status}")
+                print(f"❌ GKE cluster status: {status}")
+            else:
+                print(f"✅ GKE cluster is running")
+        except subprocess.CalledProcessError:
+            # GKE might not be used, so this is not a critical failure
+            print("⚠️ GKE cluster check skipped (GKE might not be used)")
         
-        # Example: Check GKE cluster status (if using GKE)
-        # Note: This is just an example and would need google-cloud-container library
-        """
-        from google.cloud import container_v1
+        # Check Cloud Run service if using Cloud Run
+        try:
+            cloudrun_result = subprocess.run(
+                ["gcloud", "run", "services", "describe", "circle-core", "--format", "json"],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            
+            cloudrun_data = json.loads(cloudrun_result.stdout)
+            conditions = cloudrun_data.get("status", {}).get("conditions", [])
+            ready = any(c.get("type") == "Ready" and c.get("status") == "True" for c in conditions)
+            
+            if not ready:
+                failures.append("Cloud Run service is not ready")
+                print("❌ Cloud Run service is not ready")
+            else:
+                print("✅ Cloud Run service is ready")
+        except subprocess.CalledProcessError:
+            # Cloud Run might not be used, so this is not a critical failure
+            print("⚠️ Cloud Run service check skipped (Cloud Run might not be used)")
         
-        client = container_v1.ClusterManagerClient()
-        project_id = "circle-core-project"
-        zone = "us-central1-a"
-        cluster_id = "circle-core-cluster"
-        
-        name = f"projects/{project_id}/locations/{zone}/clusters/{cluster_id}"
-        
-        response = client.get_cluster(name=name)
-        
-        if response.status == container_v1.Cluster.Status.RUNNING:
-            print(f"✅ GKE cluster '{cluster_id}' is running")
-        else:
-            failures.append(f"GKE cluster '{cluster_id}' status is {response.status}")
-            print(f"❌ GKE cluster '{cluster_id}' status is {response.status}")
-        """
     except Exception as e:
-        print(f"❌ Error checking GCP resources: {str(e)}")
         failures.append(f"Error checking GCP resources: {str(e)}")
+        print(f"❌ Error checking GCP resources: {str(e)}")
     
     return failures
 
-def validate_deployment(environment, target):
-    """Validate a Circle Core deployment"""
-    print(f"Starting validation for {environment} environment on {target} target...")
-    
-    # Get validation config
-    if target not in VALIDATION_CHECKS:
-        print(f"Error: Unsupported target '{target}'")
-        sys.exit(1)
-    
-    config = VALIDATION_CHECKS[target].copy()
-    
-    # Validate based on target
-    failures = []
-    
-    if target == "docker":
-        failures = check_docker_deployment(config)
-    elif target == "kubernetes":
-        failures = check_kubernetes_deployment(config)
-    elif target == "aws":
-        failures = check_aws_deployment(config)
-    elif target == "azure":
-        failures = check_azure_deployment(config)
-    elif target == "gcp":
-        failures = check_gcp_deployment(config)
-    
-    # Print validation results
-    print("\n======================================")
-    print(f"Validation Results - {environment} on {target}")
-    print("======================================")
-    
-    if not failures:
-        print("✅ All checks passed!")
-        return 0
-    else:
-        print(f"❌ {len(failures)} failures detected:")
-        for i, failure in enumerate(failures, 1):
-            print(f"  {i}. {failure}")
-        return 1
-
 def main():
-    """Main function to parse arguments and validate deployment"""
+    """Main function"""
     parser = argparse.ArgumentParser(description='Validate Circle Core deployment')
     parser.add_argument('-e', '--environment', required=True,
                         choices=['development', 'staging', 'production'],
@@ -521,10 +543,50 @@ def main():
     parser.add_argument('-t', '--target', required=True,
                         choices=['docker', 'kubernetes', 'aws', 'azure', 'gcp'],
                         help='Deployment target')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        help='Enable verbose output')
     
     args = parser.parse_args()
     
-    return validate_deployment(args.environment, args.target)
+    print(f"Validating {args.environment} deployment on {args.target}...")
+    
+    # Get the validation configuration for the target
+    if args.target not in VALIDATION_CHECKS:
+        print(f"Error: Unknown target '{args.target}'")
+        sys.exit(1)
+    
+    config = VALIDATION_CHECKS[args.target].copy()
+    
+    # Adjust configuration based on environment
+    if args.environment == "production":
+        config["retry_attempts"] = config["retry_attempts"] + 2
+    
+    # Perform validation based on target
+    failures = []
+    if args.target == "docker":
+        failures = check_docker_deployment(config)
+    elif args.target == "kubernetes":
+        failures = check_kubernetes_deployment(config)
+    elif args.target == "aws":
+        failures = check_aws_deployment(config)
+    elif args.target == "azure":
+        failures = check_azure_deployment(config)
+    elif args.target == "gcp":
+        failures = check_gcp_deployment(config)
+    
+    # Print validation results
+    print("\n======================================")
+    print("Validation Results")
+    print("======================================")
+    
+    if failures:
+        print(f"❌ Validation failed with {len(failures)} issues:")
+        for i, failure in enumerate(failures, 1):
+            print(f"  {i}. {failure}")
+        sys.exit(1)
+    else:
+        print("✅ Validation successful! No issues found.")
+        sys.exit(0)
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()

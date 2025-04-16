@@ -9,13 +9,13 @@ data:
     {
       "app": {
         "name": "Circle Core",
-        "environment": "production",
+        "environment": "development",
         "debug": false,
         "log_level": "INFO",
         "api": {
           "host": "0.0.0.0",
           "port": 8000,
-          "workers": 4
+          "workers": 2
         }
       },
       "security": {
@@ -24,15 +24,14 @@ data:
           "key_rotation_days": 30
         },
         "authentication": {
-          "session_timeout_minutes": 15,
+          "session_timeout_minutes": 30,
           "mfa_enabled": true,
           "password_policy": {
             "min_length": 12,
             "require_uppercase": true,
             "require_lowercase": true,
             "require_numbers": true,
-            "require_special": true,
-            "max_age_days": 90
+            "require_special": true
           }
         },
         "audit": {
@@ -47,7 +46,7 @@ data:
       },
       "database": {
         "type": "postgres",
-        "host": "postgres-service",
+        "host": "postgres",
         "port": 5432,
         "name": "circlecore",
         "user": "circle",
@@ -55,7 +54,7 @@ data:
       },
       "cache": {
         "type": "redis",
-        "host": "redis-service",
+        "host": "redis",
         "port": 6379,
         "ttl_seconds": 600
       }
@@ -68,4 +67,5 @@ data:
     scrape_configs:
       - job_name: 'circle-core'
         static_configs:
-          - targets: ['circle-core-service:8000']
+          - targets: ['circle-core:8000']
+        metrics_path: '/metrics'

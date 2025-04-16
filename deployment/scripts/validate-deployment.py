@@ -280,11 +280,9 @@ def check_aws_deployment(config):
     # Check AWS resources
     try:
         print("Checking AWS resources...")
-        # Add specific AWS resource checks using boto3 or aws-cli
-        # For example, check if ECS tasks are running, RDS instance is available, etc.
-        # This would require AWS credentials to be configured
-        
-        print("✅ AWS resources check completed")
+        # Add specific checks for AWS resources (ECS/EKS, RDS, etc.)
+        # This would normally involve AWS CLI commands or using boto3
+        print("⚠️ Detailed AWS resource checks not implemented yet.")
     except Exception as e:
         print(f"❌ Error checking AWS resources: {str(e)}")
         failures.append(f"Error checking AWS resources: {str(e)}")
@@ -342,11 +340,9 @@ def check_azure_deployment(config):
     # Check Azure resources
     try:
         print("Checking Azure resources...")
-        # Add specific Azure resource checks using azure-cli
-        # For example, check if App Service is running, Azure SQL database is available, etc.
-        # This would require Azure credentials to be configured
-        
-        print("✅ Azure resources check completed")
+        # Add specific checks for Azure resources (AKS, SQL Database, etc.)
+        # This would normally involve Azure CLI commands
+        print("⚠️ Detailed Azure resource checks not implemented yet.")
     except Exception as e:
         print(f"❌ Error checking Azure resources: {str(e)}")
         failures.append(f"Error checking Azure resources: {str(e)}")
@@ -404,11 +400,9 @@ def check_gcp_deployment(config):
     # Check GCP resources
     try:
         print("Checking GCP resources...")
-        # Add specific GCP resource checks using gcloud cli
-        # For example, check if GKE cluster is running, Cloud SQL instance is available, etc.
-        # This would require GCP credentials to be configured
-        
-        print("✅ GCP resources check completed")
+        # Add specific checks for GCP resources (GKE, Cloud SQL, etc.)
+        # This would normally involve gcloud CLI commands
+        print("⚠️ Detailed GCP resource checks not implemented yet.")
     except Exception as e:
         print(f"❌ Error checking GCP resources: {str(e)}")
         failures.append(f"Error checking GCP resources: {str(e)}")
@@ -417,17 +411,21 @@ def check_gcp_deployment(config):
 
 def validate_deployment(environment, target):
     """Main validation function"""
-    print(f"\n===== Validating {target.upper()} deployment ({environment}) =====\n")
-    start_time = datetime.now()
+    print(f"Validating {target} deployment in {environment} environment...")
     
-    # Get validation configuration for the target
     if target not in VALIDATION_CHECKS:
-        print(f"Error: Unknown target '{target}'")
-        sys.exit(1)
+        print(f"Error: Unknown deployment target '{target}'")
+        return 1
     
     config = VALIDATION_CHECKS[target].copy()
     
-    # Run checks based on target
+    # Modify config based on environment
+    if environment == "production":
+        # Add additional checks for production
+        if target == "docker":
+            config["container_names"].extend(["nginx", "prometheus", "grafana"])
+    
+    # Run appropriate checks based on target
     if target == "docker":
         failures = check_docker_deployment(config)
     elif target == "kubernetes":
@@ -439,40 +437,39 @@ def validate_deployment(environment, target):
     elif target == "gcp":
         failures = check_gcp_deployment(config)
     else:
-        print(f"Error: Unknown target '{target}'")
-        sys.exit(1)
+        print(f"Error: Unknown deployment target '{target}'")
+        return 1
     
-    # Print summary
-    end_time = datetime.now()
-    duration = (end_time - start_time).total_seconds()
-    
-    print(f"\n===== Validation Summary =====")
-    print(f"Target: {target.upper()}")
+    # Print validation summary
+    print("\n" + "=" * 50)
+    print("Deployment Validation Summary")
+    print("=" * 50)
     print(f"Environment: {environment}")
-    print(f"Duration: {duration:.2f} seconds")
+    print(f"Target: {target}")
+    print(f"Timestamp: {datetime.now().isoformat()}")
+    print(f"Status: {'❌ FAILED' if failures else '✅ PASSED'}")
     
     if failures:
-        print(f"\n❌ Validation FAILED with {len(failures)} issues:")
+        print("\nFailures:")
         for i, failure in enumerate(failures, 1):
-            print(f"  {i}. {failure}")
-        sys.exit(1)
-    else:
-        print(f"\n✅ Validation PASSED! The deployment is healthy.")
-        sys.exit(0)
+            print(f"{i}. {failure}")
+        return 1
+    
+    return 0
 
 def main():
     """Main function to parse arguments and run validation"""
     parser = argparse.ArgumentParser(description='Validate Circle Core deployment')
     parser.add_argument('-e', '--environment', required=True,
                         choices=['development', 'staging', 'production'],
-                        help='Target environment')
+                        help='Deployment environment')
     parser.add_argument('-t', '--target', required=True,
                         choices=['docker', 'kubernetes', 'aws', 'azure', 'gcp'],
                         help='Deployment target')
     
     args = parser.parse_args()
     
-    validate_deployment(args.environment, args.target)
+    sys.exit(validate_deployment(args.environment, args.target))
 
 if __name__ == '__main__':
     main()

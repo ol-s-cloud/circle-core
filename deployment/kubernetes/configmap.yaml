@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: circle-core-config
+  labels:
+    app: circle-core
+data:
+  config.json: |
+    {
+      "app": {
+        "name": "Circle Core",
+        "environment": "production",
+        "debug": false,
+        "log_level": "INFO",
+        "api": {
+          "host": "0.0.0.0",
+          "port": 8000,
+          "workers": 4
+        }
+      },
+      "security": {
+        "encryption": {
+          "algorithm": "AES-GCM",
+          "key_rotation_days": 30
+        },
+        "authentication": {
+          "session_timeout_minutes": 15,
+          "mfa_enabled": true,
+          "password_policy": {
+            "min_length": 12,
+            "require_uppercase": true,
+            "require_lowercase": true,
+            "require_numbers": true,
+            "require_special": true,
+            "max_age_days": 90
+          }
+        },
+        "audit": {
+          "enabled": true,
+          "retention_days": 90
+        }
+      },
+      "storage": {
+        "backend": "file",
+        "path": "/data/storage",
+        "encryption_enabled": true
+      },
+      "database": {
+        "type": "postgres",
+        "host": "postgres-service",
+        "port": 5432,
+        "name": "circlecore",
+        "user": "circle",
+        "pool_size": 10
+      },
+      "cache": {
+        "type": "redis",
+        "host": "redis-service",
+        "port": 6379,
+        "ttl_seconds": 600
+      }
+    }
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+    
+    scrape_configs:
+      - job_name: 'circle-core'
+        static_configs:
+          - targets: ['circle-core-service:8000']

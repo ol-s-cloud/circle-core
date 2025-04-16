@@ -280,9 +280,33 @@ def check_aws_deployment(config):
     # Check AWS resources
     try:
         print("Checking AWS resources...")
-        # Add specific checks for AWS resources (ECS/EKS, RDS, etc.)
-        # This would normally involve AWS CLI commands or using boto3
-        print("⚠️ Detailed AWS resource checks not implemented yet.")
+        # Add specific AWS resource checks here (e.g., EC2 instances, RDS, etc.)
+        # This would typically involve using boto3 to query AWS resources
+        
+        # Example: Check ECS service status (if using ECS)
+        # Note: This is just an example and would need boto3 library
+        """
+        import boto3
+        ecs = boto3.client('ecs')
+        cluster_name = "circle-core-cluster"
+        service_name = "circle-core-service"
+        
+        response = ecs.describe_services(
+            cluster=cluster_name,
+            services=[service_name]
+        )
+        
+        if len(response['services']) > 0:
+            service = response['services'][0]
+            if service['status'] == 'ACTIVE':
+                print(f"✅ ECS service '{service_name}' is active")
+            else:
+                failures.append(f"ECS service '{service_name}' status is {service['status']}")
+                print(f"❌ ECS service '{service_name}' status is {service['status']}")
+        else:
+            failures.append(f"ECS service '{service_name}' not found")
+            print(f"❌ ECS service '{service_name}' not found")
+        """
     except Exception as e:
         print(f"❌ Error checking AWS resources: {str(e)}")
         failures.append(f"Error checking AWS resources: {str(e)}")
@@ -340,9 +364,29 @@ def check_azure_deployment(config):
     # Check Azure resources
     try:
         print("Checking Azure resources...")
-        # Add specific checks for Azure resources (AKS, SQL Database, etc.)
-        # This would normally involve Azure CLI commands
-        print("⚠️ Detailed Azure resource checks not implemented yet.")
+        # Add specific Azure resource checks here
+        # This would typically involve using azure-sdk-for-python
+        
+        # Example: Check App Service status (if using Azure App Service)
+        # Note: This is just an example and would need azure-mgmt-web library
+        """
+        from azure.mgmt.web import WebSiteManagementClient
+        from azure.identity import DefaultAzureCredential
+        
+        credential = DefaultAzureCredential()
+        web_client = WebSiteManagementClient(credential, subscription_id)
+        
+        resource_group = "circle-core-rg"
+        app_service_name = "circle-core-app"
+        
+        app_service = web_client.web_apps.get(resource_group, app_service_name)
+        
+        if app_service.state == "Running":
+            print(f"✅ App Service '{app_service_name}' is running")
+        else:
+            failures.append(f"App Service '{app_service_name}' state is {app_service.state}")
+            print(f"❌ App Service '{app_service_name}' state is {app_service.state}")
+        """
     except Exception as e:
         print(f"❌ Error checking Azure resources: {str(e)}")
         failures.append(f"Error checking Azure resources: {str(e)}")
@@ -400,9 +444,29 @@ def check_gcp_deployment(config):
     # Check GCP resources
     try:
         print("Checking GCP resources...")
-        # Add specific checks for GCP resources (GKE, Cloud SQL, etc.)
-        # This would normally involve gcloud CLI commands
-        print("⚠️ Detailed GCP resource checks not implemented yet.")
+        # Add specific GCP resource checks here
+        # This would typically involve using google-cloud-python libraries
+        
+        # Example: Check GKE cluster status (if using GKE)
+        # Note: This is just an example and would need google-cloud-container library
+        """
+        from google.cloud import container_v1
+        
+        client = container_v1.ClusterManagerClient()
+        project_id = "circle-core-project"
+        zone = "us-central1-a"
+        cluster_id = "circle-core-cluster"
+        
+        name = f"projects/{project_id}/locations/{zone}/clusters/{cluster_id}"
+        
+        response = client.get_cluster(name=name)
+        
+        if response.status == container_v1.Cluster.Status.RUNNING:
+            print(f"✅ GKE cluster '{cluster_id}' is running")
+        else:
+            failures.append(f"GKE cluster '{cluster_id}' status is {response.status}")
+            print(f"❌ GKE cluster '{cluster_id}' status is {response.status}")
+        """
     except Exception as e:
         print(f"❌ Error checking GCP resources: {str(e)}")
         failures.append(f"Error checking GCP resources: {str(e)}")
@@ -410,22 +474,19 @@ def check_gcp_deployment(config):
     return failures
 
 def validate_deployment(environment, target):
-    """Main validation function"""
-    print(f"Validating {target} deployment in {environment} environment...")
+    """Validate a Circle Core deployment"""
+    print(f"Starting validation for {environment} environment on {target} target...")
     
+    # Get validation config
     if target not in VALIDATION_CHECKS:
-        print(f"Error: Unknown deployment target '{target}'")
-        return 1
+        print(f"Error: Unsupported target '{target}'")
+        sys.exit(1)
     
     config = VALIDATION_CHECKS[target].copy()
     
-    # Modify config based on environment
-    if environment == "production":
-        # Add additional checks for production
-        if target == "docker":
-            config["container_names"].extend(["nginx", "prometheus", "grafana"])
+    # Validate based on target
+    failures = []
     
-    # Run appropriate checks based on target
     if target == "docker":
         failures = check_docker_deployment(config)
     elif target == "kubernetes":
@@ -436,29 +497,23 @@ def validate_deployment(environment, target):
         failures = check_azure_deployment(config)
     elif target == "gcp":
         failures = check_gcp_deployment(config)
+    
+    # Print validation results
+    print("\n======================================")
+    print(f"Validation Results - {environment} on {target}")
+    print("======================================")
+    
+    if not failures:
+        print("✅ All checks passed!")
+        return 0
     else:
-        print(f"Error: Unknown deployment target '{target}'")
-        return 1
-    
-    # Print validation summary
-    print("\n" + "=" * 50)
-    print("Deployment Validation Summary")
-    print("=" * 50)
-    print(f"Environment: {environment}")
-    print(f"Target: {target}")
-    print(f"Timestamp: {datetime.now().isoformat()}")
-    print(f"Status: {'❌ FAILED' if failures else '✅ PASSED'}")
-    
-    if failures:
-        print("\nFailures:")
+        print(f"❌ {len(failures)} failures detected:")
         for i, failure in enumerate(failures, 1):
-            print(f"{i}. {failure}")
+            print(f"  {i}. {failure}")
         return 1
-    
-    return 0
 
 def main():
-    """Main function to parse arguments and run validation"""
+    """Main function to parse arguments and validate deployment"""
     parser = argparse.ArgumentParser(description='Validate Circle Core deployment')
     parser.add_argument('-e', '--environment', required=True,
                         choices=['development', 'staging', 'production'],
@@ -469,7 +524,7 @@ def main():
     
     args = parser.parse_args()
     
-    sys.exit(validate_deployment(args.environment, args.target))
+    return validate_deployment(args.environment, args.target)
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

@@ -5,8 +5,7 @@ metadata:
   labels:
     app: circle-core
 data:
-  # Configuration for the Circle Core application
-  config.json: |
+  app-config.json: |
     {
       "app": {
         "name": "Circle Core",
@@ -48,39 +47,59 @@ data:
       },
       "database": {
         "type": "postgres",
-        "host": "${DB_HOST}",
-        "port": ${DB_PORT},
-        "name": "${DB_NAME}",
-        "user": "${DB_USER}",
+        "host": "circle-core-db",
+        "port": 5432,
+        "name": "circlecore",
+        "user": "circle",
         "pool_size": 20,
         "ssl_enabled": true
       },
       "cache": {
         "type": "redis",
-        "host": "${REDIS_HOST}",
-        "port": ${REDIS_PORT},
+        "host": "circle-core-redis",
+        "port": 6379,
         "ttl_seconds": 1200
+      },
+      "performance": {
+        "request_timeout": 30,
+        "max_request_size_mb": 10,
+        "rate_limiting": {
+          "enabled": true,
+          "rate": 100,
+          "burst": 20
+        }
+      },
+      "monitoring": {
+        "metrics_enabled": true,
+        "health_check_interval": 60
       }
     }
-  
-  # Prometheus configuration
-  prometheus.yml: |
-    global:
-      scrape_interval: 15s
-      evaluation_interval: 15s
-    
-    scrape_configs:
-      - job_name: 'circle-core'
-        static_configs:
-          - targets: ['circle-core:8000']
-        metrics_path: /metrics
-  
-  # Default environment variables
-  env.properties: |
-    CIRCLE_LOG_LEVEL=INFO
-    DB_HOST=postgres
-    DB_PORT=5432
-    DB_NAME=circlecore
-    DB_USER=circle
-    REDIS_HOST=redis
-    REDIS_PORT=6379
+  nginx.conf: |
+    server {
+      listen 80;
+      
+      location / {
+        proxy_pass http://localhost:8000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+      
+      location /health {
+        proxy_pass http://localhost:8000/health;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+      }
+      
+      location /metrics {
+        proxy_pass http://localhost:8000/metrics;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        
+        # Restrict access to internal networks
+        allow 10.0.0.0/8;
+        allow 127.0.0.1;
+        deny all;
+      }
+    }

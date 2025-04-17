@@ -1,36 +1,67 @@
 ---
 name: Integration Request
-about: Request a new integration with an external platform or technology
-title: '[INTEGRATION] Integration with [Platform/Technology]'
+about: Request a new technology integration for Circle Core
+title: '[INTEGRATION] Add support for [Technology Name]'
 labels: integration, enhancement
 assignees: ''
 ---
 
-## Integration Request
+## Technology Information
 
-### Platform/Technology
-<!-- Name and link to the platform or technology you're requesting an integration with -->
+**Technology Name**: <!-- e.g., MongoDB, Snowflake, OpenAI -->
 
-### Integration Category
-<!-- Choose one of: Cloud Platform / Data Storage / Analytics & BI / AI & ML / Data Engineering / DevOps & CI/CD / Security / Industry Solutions -->
+**Technology Website**: <!-- URL to technology's main website -->
 
-### Use Case
-<!-- Describe how you would use this integration and the problems it would solve -->
+**Category**: <!-- e.g., Database, Cloud Platform, AI/ML, Analytics, DevOps -->
 
-### Business Value
-<!-- Explain the value this integration would bring to Circle Core users -->
+**License Type**: <!-- e.g., Open Source (MIT, Apache, etc.), Commercial, Proprietary -->
 
-### Technical Details
-<!-- Provide any relevant API documentation, SDK links, or technical details that would help with implementation -->
+## Integration Details
 
-### Community Interest
-<!-- If possible, provide evidence of community interest in this integration (forum discussions, related issues, etc.) -->
+**Why should this technology be integrated with Circle Core?**
+<!-- Describe the value this integration would bring to Circle Core users -->
 
-### Integration Priority
-<!-- Choose one: High / Medium / Low -->
+**How would you use this integration?**
+<!-- Describe your specific use case(s) -->
 
-### Additional Context
-<!-- Add any other context or information about the integration request here -->
+**What features/capabilities would you need from this integration?**
+<!-- List the specific features or capabilities you would need -->
 
-### Are you willing to contribute to this integration?
-<!-- Yes / No / Partially -->
+**Are there any existing libraries/SDKs for this technology?**
+<!-- List any official or community libraries that might help with the integration -->
+
+## Proposed Integration Approach
+
+**Do you have a preferred approach for this integration?**
+<!-- If you have thoughts on how this should be implemented, please share them -->
+
+**Are there any similar existing integrations in Circle Core?**
+<!-- List any similar integrations that could serve as a pattern for this one -->
+
+**Are there any potential challenges or considerations?**
+<!-- Note any concerns or complexities with this integration -->
+
+## Community Interest
+
+**Who would benefit from this integration?**
+<!-- Describe the type of users/organizations that would benefit -->
+
+**Is anyone else interested in this integration?**
+<!-- Tag other GitHub users who might be interested -->
+
+**Would you be willing to help test this integration?**
+<!-- Yes/No -->
+
+**Would you be willing to contribute to this integration?**
+<!-- Yes/No/Maybe with assistance -->
+
+## Additional Information
+
+**Documentation References**:
+<!-- Link to relevant documentation, API references, etc. -->
+
+**Related Issues/Discussions**:
+<!-- Link to any related issues or discussions -->
+
+**Any other relevant information**:
+<!-- Add any other relevant details -->

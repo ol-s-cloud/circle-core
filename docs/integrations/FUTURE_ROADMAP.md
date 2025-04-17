@@ -1,183 +1,139 @@
-# Circle Core: Future Integration Roadmap
-
+# Circle Core - Future Integration Roadmap
 *Last Updated: April 17, 2025*
 
-This document outlines the forward-looking vision for Circle Core integrations, including upcoming technologies, community contribution opportunities, and processes for requesting new integrations.
+This document outlines the vision for future Circle Core integrations, upcoming documentation improvements, and long-term integration plans. It serves as a living document to communicate our direction to the community and set expectations for future development.
 
-## Upcoming Technology Integrations
+## Integration Roadmap
 
-Beyond our [current integration roadmap](strategies/integration-strategy.md), we're monitoring these emerging technologies for potential future integration:
+### Upcoming Integration Categories (2025-2026)
 
-### Open Source AI & Agent Frameworks
+Beyond our [current integration plans](historical/2025-04-16-integrations.md), we're exploring these additional categories:
 
-| Technology | Description | Potential Timeline |
-|------------|-------------|-------------------|
-| **CrewAI** | Multi-agent orchestration framework | Q3 2025 |
-| **AutoGen** | Multi-agent conversation framework | Q4 2025 |
-| **DSPy** | Programming framework for LLMs | Q3 2025 |
-| **LlamaIndex** | Data framework for LLM applications | Q3 2025 |
-| **Semantic Kernel** | Microsoft's orchestration framework | Q4 2025 |
-| **Ollama** | Run open models locally | Q4 2025 |
-| **LocalAI** | Self-hosted AI service | Q4 2025 |
+| Category | Timeframe | Description |
+|----------|-----------|-------------|
+| **Web3 & Blockchain** | Q3 2025 | Integrations with blockchain platforms, smart contract systems, and decentralized storage |
+| **IoT Platforms** | Q4 2025 | Connecting with industrial IoT platforms, edge computing systems, and sensor networks |
+| **Extended Reality (XR)** | Q1 2026 | AR/VR data pipelines, spatial computing, and immersive analytics |
+| **Robotics & Automation** | Q2 2026 | RPA platforms, physical automation systems, and digital twin technologies |
+| **Quantum Computing** | 2026+ | Early integrations with quantum computing platforms and simulators |
 
-### Open Source Data & Analytics Frameworks
+### Open Source Community Integrations
 
-| Technology | Description | Potential Timeline |
-|------------|-------------|-------------------|
-| **DVC** | Data Version Control | Q3 2025 |
-| **Great Expectations** | Data validation | Q3 2025 |
-| **Kedro** | Data pipeline framework | Q4 2025 |
-| **Evidently AI** | ML monitoring | Q4 2025 |
-| **Streamlit** | Data apps framework | Q3 2025 |
-| **LangFuse** | LLM observability | Q3 2025 |
+We're particularly interested in integrating with these open source ecosystems:
 
-### Emerging Cloud & Infrastructure Technologies
+1. **Agent Frameworks**
+   - [CrewAI](https://github.com/joaomdmoura/crewAI) - Multi-agent orchestration
+   - [AutoGen](https://github.com/microsoft/autogen) - Multi-agent conversation framework 
+   - [LangGraph](https://github.com/langchain-ai/langgraph) - Building stateful, multi-actor applications
 
-| Technology | Description | Potential Timeline |
-|------------|-------------|-------------------|
-| **Crossplane** | Control plane framework | Q4 2025 |
-| **Backstage** | Developer portal platform | Q1 2026 |
-| **OpenFunction** | Serverless platform | Q4 2025 |
-| **Dapr** | Distributed application runtime | Q3 2025 |
-| **Cilium** | Cloud native networking | Q1 2026 |
+2. **Vector Database & Embedding Systems**
+   - [Chroma](https://github.com/chroma-core/chroma) - Open-source embedding database
+   - [Qdrant](https://github.com/qdrant/qdrant) - Vector similarity search engine
+   - [Marqo](https://github.com/marqo-ai/marqo) - Tensor search for any data type
 
-## Community Integration Contributions
+3. **Open ML & AI Infrastructure**
+   - [Ray](https://github.com/ray-project/ray) - Distributed computing framework
+   - [BentoML](https://github.com/bentoml/BentoML) - Model serving framework
+   - [Llama Index](https://github.com/jerryjliu/llama_index) - Data framework for LLM applications
 
-We welcome community contributions for new integrations! Here's how you can get involved:
+4. **Data Orchestration**
+   - [Dagster](https://github.com/dagster-io/dagster) - Data orchestrator for ML
+   - [Kestra](https://github.com/kestra-io/kestra) - Event-driven orchestration
+   - [Kedro](https://github.com/kedro-org/kedro) - Production-ready data science pipelines
 
-### Contribution Process
+5. **Open Source LLMs**
+   - [Llama 3](https://github.com/meta-llama/llama) - Meta's open source LLM
+   - [Mistral](https://github.com/mistralai/mistral-src) - Mistral AI's open weights models
+   - [Phi-3](https://huggingface.co/microsoft/phi-3) - Microsoft's efficient LLM
 
-1. **Integration Proposal**
-   - Create an issue using the [Integration Request template](https://github.com/ol-s-cloud/circle-core/issues/new?template=integration_request.md)
-   - Discuss the integration with maintainers
-   - Get approval for the integration approach
+## Community-Driven Integration Process
 
-2. **Development Guidelines**
-   - Follow the [Integration Template](templates/integration-template.md)
-   - Adhere to our [Integration Strategy](strategies/integration-strategy.md) principles
-   - Ensure comprehensive testing and documentation
+We recognize the value of community contributions and are establishing a process for community members to propose and develop integrations:
 
-3. **Review Process**
-   - Submit a PR with your integration implementation
-   - Address feedback from maintainers
-   - Pass security and code quality review
+1. **Integration Requests**
+   - [Integration Request Template](templates/integration-request-template.md)
+   - Community voting on GitHub Discussions to prioritize requests
+   - Quarterly review of top requested integrations
 
-4. **Maintenance Expectations**
-   - Community contributors are expected to help maintain their integrations
-   - Respond to issues related to the integration
-   - Keep the integration up-to-date with the latest Circle Core releases
+2. **Community Development**
+   - [Integration Development Guide](guides/community-integration-guide.md)
+   - Mentorship program for first-time contributors
+   - Recognition program for community developers
 
-### Integration Request Process
+3. **Ecosystem Partnerships**
+   - Strategic partnerships with key open source projects
+   - Co-development opportunities with complementary platforms
+   - Joint hackathons and integration challenges
 
-Not a developer but need an integration? We have a process for that too:
+## Documentation Enhancements
 
-1. **Submit Integration Request**
-   - Create a new issue using the [Integration Request template](https://github.com/ol-s-cloud/circle-core/issues/new?template=integration_request.md)
-   - Provide details about the technology and your use case
-   - Explain the business value and potential user base
+Future improvements to our documentation structure:
 
-2. **Community Voting**
-   - We use GitHub reactions for community voting on integration requests
-   - Higher community interest increases prioritization
-   - Comments with additional use cases help strengthen the request
+1. **Interactive Documentation**
+   - Interactive integration examples
+   - Embedded integration playground
+   - Visual integration dependency maps
 
-3. **Prioritization Process**
-   - Our team reviews requests quarterly
-   - We consider community interest, strategic alignment, and implementation complexity
-   - Selected integrations are added to our roadmap
+2. **Specialized Guides**
+   - Industry-specific integration guides
+   - Multi-integration solution templates
+   - Performance optimization handbooks
 
-4. **Sponsorship Options**
-   - For business-critical integrations, we offer sponsorship options
-   - Sponsored integrations receive dedicated development resources
-   - Contact our team at integrations@circlecore.example.com for details
+3. **Video & Interactive Learning**
+   - Integration tutorial videos
+   - Interactive walkthroughs
+   - Live integration workshops
 
-## Integration Partnerships
+4. **Case Studies**
+   - Real-world integration examples
+   - Performance and cost benchmarks
+   - Security best practices
 
-We're actively seeking partnerships with technology providers for deeper integrations:
+## Integration Marketplace Vision
 
-### Partnership Benefits
+Long-term vision for a Circle Core Integration Marketplace:
 
-- Official certification for Circle Core compatibility
-- Co-marketing opportunities
-- Technical collaboration with our integration team
-- Priority support for integration issues
-- Early access to new Circle Core features
+1. **Discovery & Installation**
+   - Searchable integration catalog
+   - One-click installation
+   - Version management
 
-### Partnership Process
+2. **Quality & Trust**
+   - Community ratings and reviews
+   - Security verification
+   - Performance metrics
 
-Interested in becoming an integration partner? Here's the process:
+3. **Monetization Options**
+   - Free and premium integrations
+   - Usage-based pricing models
+   - Revenue sharing for developers
 
-1. **Initial Contact**
-   - Reach out to partnerships@circlecore.example.com
-   - Provide details about your technology and integration vision
+4. **Enterprise Features**
+   - Private integration repositories
+   - Compliance certifications
+   - Enterprise support options
 
-2. **Technical Assessment**
-   - Joint technical evaluation of integration requirements
-   - Architecture and security review
-   - Resource planning
+## How to Influence the Roadmap
 
-3. **Partnership Agreement**
-   - Define partnership terms and responsibilities
-   - Establish support channels and processes
-   - Create joint development plan
+We welcome community input on our integration roadmap:
 
-4. **Development & Release**
-   - Collaborative development of the integration
-   - Joint testing and quality assurance
-   - Coordinated release and announcement
+1. **Submit Integration Requests**
+   - Use our [integration request form](https://github.com/ol-s-cloud/circle-core/discussions/new?category=integration-requests)
+   - Provide detailed use cases and requirements
+   - Link to relevant documentation and communities
 
-## Integration Showcase
+2. **Contribute to Discussions**
+   - Join our [integration planning discussions](https://github.com/ol-s-cloud/circle-core/discussions/categories/integration-planning)
+   - Vote on proposed integrations
+   - Share implementation ideas and challenges
 
-We showcase exceptional integrations with Circle Core:
+3. **Develop Proof of Concepts**
+   - Create prototype integrations
+   - Submit integration design proposals
+   - Share performance and compatibility findings
 
-- **Featured Integrations Page**: Highlighted on our website
-- **Case Studies**: In-depth articles on integration success stories
-- **Community Spotlights**: Recognition for community contributors
-- **Integration Videos**: Demos and walkthroughs of key integrations
+## Conclusion
 
-## Future Documentation Enhancements
+Our integration roadmap is ambitious but achievable with community collaboration. We're committed to building a comprehensive integration ecosystem that connects Circle Core to the most valuable technologies while maintaining our security-first approach and architectural standards.
 
-Our documentation approach will continue to evolve with these planned enhancements:
-
-1. **Interactive API Explorer**
-   - Live documentation for integration APIs
-   - Try-it-now functionality for API endpoints
-   - Code generation for multiple languages
-
-2. **Integration Compatibility Matrix**
-   - Compatibility information across Circle Core versions
-   - Feature comparison between similar integrations
-   - System requirements for each integration
-
-3. **Integration Health Dashboard**
-   - Live status of integrated services
-   - Performance metrics for integrations
-   - Deprecation notices and upgrade paths
-
-4. **Integration Certification Program**
-   - Formal certification process for integrations
-   - Compliance verification for enterprise standards
-   - Security assessment documentation
-
-## Get Involved
-
-We encourage you to get involved with Circle Core integrations:
-
-- **Join Discussions**: Participate in our [Integration forum](https://forum.circlecore.example.com/integrations)
-- **Contribute Code**: Submit PRs for new integrations or improvements
-- **Report Issues**: Help us improve by reporting integration issues
-- **Share Use Cases**: Tell us how you're using Circle Core integrations
-- **Spread the Word**: Share your experience with the community
-
-## Contact
-
-For questions about integrations, contact us at:
-- **Integration Support**: integrations@circlecore.example.com
-- **Partnership Inquiries**: partnerships@circlecore.example.com
-- **Community Manager**: community@circlecore.example.com
-
----
-
-This roadmap is a living document and will be updated regularly to reflect our evolving integration strategy.
-
-*Note: All timelines are tentative and subject to change based on technology evolution and community priorities.*
+This roadmap will evolve based on community feedback, technology trends, and strategic priorities. We encourage ongoing input from users, developers, and partners to ensure our integration strategy remains aligned with real-world needs.

@@ -1,67 +1,77 @@
 ---
 name: Integration Request
-about: Request a new technology integration for Circle Core
-title: '[INTEGRATION] Add support for [Technology Name]'
+about: Suggest a new technology integration for Circle Core
+title: "[INTEGRATION] Integration with [Technology Name]"
 labels: integration, enhancement
 assignees: ''
 ---
 
-## Technology Information
+## Integration Request
 
-**Technology Name**: <!-- e.g., MongoDB, Snowflake, OpenAI -->
+### Technology Information
 
-**Technology Website**: <!-- URL to technology's main website -->
+**Name of Technology**: 
+<!-- The name of the technology/platform/service to integrate -->
 
-**Category**: <!-- e.g., Database, Cloud Platform, AI/ML, Analytics, DevOps -->
+**Category**:
+<!-- e.g., Cloud Platform, Data Storage, AI/ML, Analytics, etc. -->
 
-**License Type**: <!-- e.g., Open Source (MIT, Apache, etc.), Commercial, Proprietary -->
+**Website/Documentation URL**:
+<!-- Link to the technology's website and/or documentation -->
 
-## Integration Details
+**Open Source?**: Yes/No
+<!-- If yes, please include license type -->
 
-**Why should this technology be integrated with Circle Core?**
-<!-- Describe the value this integration would bring to Circle Core users -->
+### Integration Value
 
-**How would you use this integration?**
-<!-- Describe your specific use case(s) -->
+**Why should Circle Core integrate with this technology?**
+<!-- Explain the value this integration would bring to Circle Core users -->
 
-**What features/capabilities would you need from this integration?**
-<!-- List the specific features or capabilities you would need -->
+**Potential Use Cases**:
+<!-- List 2-3 specific use cases this integration would enable -->
 
-**Are there any existing libraries/SDKs for this technology?**
-<!-- List any official or community libraries that might help with the integration -->
+1. 
+2. 
+3. 
 
-## Proposed Integration Approach
+**User Base**:
+<!-- Who would benefit from this integration? Estimate how many Circle Core users might use this -->
 
-**Do you have a preferred approach for this integration?**
-<!-- If you have thoughts on how this should be implemented, please share them -->
+**Alternatives**:
+<!-- Are there alternative technologies that provide similar functionality? -->
 
-**Are there any similar existing integrations in Circle Core?**
-<!-- List any similar integrations that could serve as a pattern for this one -->
+### Technical Details
 
-**Are there any potential challenges or considerations?**
-<!-- Note any concerns or complexities with this integration -->
+**API Documentation**:
+<!-- Link to API documentation if available -->
 
-## Community Interest
+**Authentication Method**:
+<!-- How does the technology handle authentication? (OAuth, API Keys, etc.) -->
 
-**Who would benefit from this integration?**
-<!-- Describe the type of users/organizations that would benefit -->
+**Data Formats**:
+<!-- What data formats does the technology support? (JSON, XML, etc.) -->
 
-**Is anyone else interested in this integration?**
-<!-- Tag other GitHub users who might be interested -->
+**Rate Limits/Quotas**:
+<!-- Any known rate limits or quotas that might affect integration -->
 
-**Would you be willing to help test this integration?**
-<!-- Yes/No -->
+### Implementation Considerations
 
-**Would you be willing to contribute to this integration?**
-<!-- Yes/No/Maybe with assistance -->
+**Integration Complexity**: Low/Medium/High
+<!-- Your assessment of how complex this integration might be -->
 
-## Additional Information
+**Dependencies**:
+<!-- Any dependencies or prerequisites for this integration -->
 
-**Documentation References**:
-<!-- Link to relevant documentation, API references, etc. -->
+**Security Considerations**:
+<!-- Any security aspects that should be considered -->
 
-**Related Issues/Discussions**:
-<!-- Link to any related issues or discussions -->
+### Additional Information
 
-**Any other relevant information**:
-<!-- Add any other relevant details -->
+**Are you willing to contribute to this integration?**: Yes/No
+<!-- Let us know if you're interested in helping implement this -->
+
+**Have you implemented similar integrations before?**: Yes/No
+<!-- If yes, please share your experience -->
+
+**Additional context**:
+<!-- Add any other context, screenshots, or information about the integration request here -->
